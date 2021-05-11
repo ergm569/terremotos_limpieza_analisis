@@ -1,7 +1,7 @@
 ---
-title: 'Estadística Avanzada: PEC1 - Preproceso'
-author: "Autor: Erick Franz García Miranda"
-date: "Marzo 2020"
+title: 'Tipología y ciclo de vida de los datos: PRA2'
+author: "Autorse: Erick Franz García Miranda y Rafael Eduardo Garcia Agramonte"
+date: "Abril 2021"
 output:
   html_document:
     highlight: default
@@ -26,6 +26,18 @@ knitr::opts_chunk$set(eval=T, echo=T)
 # Descripción del dataset
 ******
 
+El dataset corresponde al generado en la PRA1 utilizando tecnicas de webscraping con Python al sitio web: https://www.volcanodiscovery.com/es/earthquakes/ que muestra información de eventos sismicos al rededor del mundo.
+
+El dataset contiene información de terremotos de 15 paises de centro y sur america como son: Argentina, Bolivia, Brasil, Chile, Colombia, Costa Rica, Ecuador, Guatemala, México, Panamá, Paraguay, Perú, Puerto Rico, República Dominicana, Venezuela); en el perido de 01 de enero del 2010 hasta el 05 de abril del 2021. El dataset tiene formato .csv y tiene **12507 registros.**
+
+Cada registro representa un evento sismico y contiene los siguientes campos:
+
+* **Fecha y Hora:** Fecha en formato día-mes-año y hora específicos en que ocurrió el sismo.
+* **Magnitud:** Indica la de magnitud del sismo en escala sismológica de richter.
+* **Profundidad:** Distancia de donde se origina el fenómeno con respecto al centro de la tierra.
+* **Ubicación:** Lugar en donde se produjo el sismo.
+* **Año:** Año en que ocurrió el sismo.
+* **País:** Nombre de la nación afectada por el sismo.
 
 ******
 # Integración y selección
