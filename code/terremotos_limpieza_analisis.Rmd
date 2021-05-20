@@ -39,6 +39,16 @@ Cada registro representa un evento sismico y contiene los siguientes campos:
 * **Año:** Año en que ocurrió el sismo.
 * **País:** Nombre de la nación afectada por el sismo.
 
+La importancia del dataset se encuentra en lo impredecible y potencialmente debastador que es un evento sismico. Un registro completo de estos eventos hace que el potencial de analisis del dataset sea elevado.
+
+En este proyecto se utilizará el dataset para responder la pregunta general de **"¿Existe algún patrón o patrones en la actividad sismica de america latina (centro america y sur america)?"**  
+Este pregunta la podemos dividir en 3 preguntas especificas:
+
+* **¿Cuál es el país con actividad sismica más intensa?**
+* **¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo?**
+* **¿Cual es la relación entre las variables de un sismo?**
+
+
 ******
 # Integración y selección
 ******
@@ -190,8 +200,16 @@ Al ser datos reales de sismos, no haremos ningún tratamiento adicional a estos 
 # Analisis de datos
 ******
 
-
 ##  Planificación
+
+Con el objetivo de responder las 3 preguntas especificas planteadas en el apartado 1, se realizarán tres analisis estadisticos:
+
+* **Contraste de hipotesis**, para determinar qué paises se dan los sismos de mayor intensidad/profundidad y con qué significancia.
+* Un modelo de **regresion logísica**, donde se modelará la probabilidad de que ocurra un sismo de acuerdo a las varibles del dataset. Nos ayudará a determinar que variables son significativas para la ocurrencia de un sismo.
+* Analisis de **correlacion**, para determinar si existe una correlación entre: 1) la intensidad y la profundidad y 2) la longitud/latitud y la intensidad y 3) la longitud/latitud y la profundidad.
+
+Por lo tanto, para el contraste de hipotesis los grupos a comparar serán los paises. Y para la regresión y la correlación el analisis se realizará al conjunto de datos en su totalidad.
+
 
 ##  Normalidad y Homogeneidad
 
