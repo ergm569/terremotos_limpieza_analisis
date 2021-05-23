@@ -202,7 +202,7 @@ Al ser datos reales de sismos, no haremos ningún tratamiento adicional a estos 
 
 ##  Planificación
 
-Con el objetivo de responder las 3 preguntas especificas planteadas en el apartado 1, se realizarán tres analisis estadisticos:
+Con el objetivo de responder las 3 preguntas especificas planteadas en el *apartado 1. Descripción*, se realizarán tres analisis estadisticos:
 
 * **Contraste de hipotesis**, para determinar qué paises se dan los sismos de mayor intensidad/profundidad y con qué significancia.
 * Un modelo de **regresion logísica**, donde se modelará la probabilidad de que ocurra un sismo de acuerdo a las varibles del dataset. Nos ayudará a determinar que variables son significativas para la ocurrencia de un sismo.
@@ -211,9 +211,103 @@ Con el objetivo de responder las 3 preguntas especificas planteadas en el aparta
 Por lo tanto, para el contraste de hipotesis los grupos a comparar serán los paises. Y para la regresión y la correlación el analisis se realizará al conjunto de datos en su totalidad.
 
 
-##  Normalidad y Homogeneidad
+##  Normalidad y Homocedasticidad
+
+Antes de realizar las pruebas estadisticas, vamos a comprobar la Normalidad y Homocedasticidad de los datos.
+
+Primero, comprobaremos la ***normalidad*** de los datos. Para ello utilizaremos el test de  **Kolmogorov-Smirnov** para las variables **Magnitud y Profunidad.** No optamos usar el test Shapiro-wilk porque el tamaño de los registros superan los 5000.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Test Kolmogorov-Smirnov aplicado a la Magnitud
+ks.test(data_terremotos$Magnitud, pnorm, mean(data_terremotos$Magnitud), sd(data_terremotos$Magnitud))
+```
+
+El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que la Magnitud no sigue una distribución Normal.
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Test Kolmogorov-Smirnov aplicado a la Profundidad
+ks.test(data_terremotos$Profundidad, pnorm, mean(data_terremotos$Profundidad), sd(data_terremotos$Profundidad))
+```
+
+El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que la Profundidad no sigue una distribución Normal.
+
+Por lo tanto, concluimos que ***la Intensidad y la Profundidad no siguen una distribución normal.***
+
+
+Ahora, comprobaremos la ***homocedasticidad*** (homogeneidad de la varianza). Para ello utilizaremos el test Fligner-Killeen, utilizado para datos que no cumplen con la condición de normalidad, para las variables **Magnitud y Profunidad** según los grupos de **Paises.**
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Test Fligner-Killeen aplicado a la Intensidad para los grupos de paises.
+fligner.test(Magnitud ~ Pais, data = data_terremotos)
+```
+
+El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que **la Magnitud presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.**
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Test Fligner-Killeen aplicado a la Profundidad para los grupos de paises.
+fligner.test(Profundidad ~ Pais, data = data_terremotos)
+```
+
+El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que **la Profundidad presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.**
+
+Por lo tanto, concluimos que ***la Intensidad y la Profundidad presentan varianzas diferentes para los Paises.***
+
 
 ##  Pruebas estadísticas
+
+En este apartado realizaremos los 3 análisis descritos en la sección *4.1 Planificación.*
+
+### Contraste de Hipotesis
+
+Realizaremos una analisis de contraste de hipotesis para saber qué pais tiene una magnitud y profundidad estadisticamente mayor a los demás.
+
+Mostramos las medias de Magnitud y Profundidad de los paises:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(plyr)
+# Contruimos una tabla con la media y varianza de la Magnitud de los Paises
+# Calculamos la media
+t_mean <- aggregate(data_terremotos$Magnitud, list(data_terremotos$Pais) , mean)
+colnames(t_mean) <- c("Pais","Media")
+# Calculamos la varianza
+t_var <- aggregate(data_terremotos$Magnitud, list(data_terremotos$Pais) , var)
+colnames(t_var) <- c("Pais","Varianza")
+# Calculamos la cantidad de sismos
+t_count <- count(data_terremotos,"Pais")
+colnames(t_count) <- c("Pais","Cantidad")
+# Contruimos la tabla y la ordenamos
+table_pais <- merge(t_mean,t_var, by = "Pais")
+table_pais <- merge(table_pais,t_count, by = "Pais")
+table_pais[order(table_pais$Media,decreasing = TRUE),]
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Contruimos una tabla con la media y varianza de la Profundidad de los Paises
+# Calculamos la media
+t_mean <- aggregate(data_terremotos$Profundidad, list(data_terremotos$Pais) , mean)
+colnames(t_mean) <- c("Pais","Media")
+# Calculamos la varianza
+t_var <- aggregate(data_terremotos$Profundidad, list(data_terremotos$Pais) , var)
+colnames(t_var) <- c("Pais","Varianza")
+# Calculamos la cantidad de sismos
+t_count <- count(data_terremotos,"Pais")
+colnames(t_count) <- c("Pais","Cantidad")
+# Contruimos la tabla y la ordenamos
+table_pais <- merge(t_mean,t_var, by = "Pais")
+table_pais <- merge(table_pais,t_count, by = "Pais")
+table_pais[order(table_pais$Media,decreasing = TRUE),]
+```
+
+En el caso de Paraguay, decidimos no considerarla por la baja cantidad de sismos (30) y alta varianza.
+Podemos observar que los 3 paises con mayor magnitud son: Brazil, Chile y Mexico. Pero todos los paises tienen valores aparentemente parecidos.
+También, observamos que los 3 paises con mayor profundidad de sismo son: Argentina, Bolivia y Brazil.
+
+Analizaremos la Magnitud, 
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+```
 
 
 ******
@@ -235,3 +329,7 @@ Por lo tanto, para el contraste de hipotesis los grupos a comparar serán los pa
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
 ```
+
+
+Posibles puntos a adicionar:
+Utilizar los años para prueba de hipotesis.
