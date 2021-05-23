@@ -1,6 +1,6 @@
 ---
 title: 'Tipología y ciclo de vida de los datos: PRA2'
-author: "Autorse: Erick Franz García Miranda y Rafael Eduardo Garcia Agramonte"
+author: "Autores: Erick Franz García Miranda y Rafael Eduardo Garcia Agramonte"
 date: "Abril 2021"
 output:
   html_document:
@@ -22,6 +22,15 @@ knitr::opts_chunk$set(eval=T, echo=T)
 ```
 
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Instala paquetes que faltan por instalarse
+
+list.of.packages <- c("lubridate", "stringr", "tidygeocoder", "dplyr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, repos='https://cran.rediris.es/')
+```
+
+
 ******
 # Descripción del dataset
 ******
@@ -39,16 +48,6 @@ Cada registro representa un evento sismico y contiene los siguientes campos:
 * **Año:** Año en que ocurrió el sismo.
 * **País:** Nombre de la nación afectada por el sismo.
 
-La importancia del dataset se encuentra en lo impredecible y potencialmente debastador que es un evento sismico. Un registro completo de estos eventos hace que el potencial de analisis del dataset sea elevado.
-
-En este proyecto se utilizará el dataset para responder la pregunta general de **"¿Existe algún patrón o patrones en la actividad sismica de america latina (centro america y sur america)?"**  
-Este pregunta la podemos dividir en 3 preguntas especificas:
-
-* **¿Cuál es el país con actividad sismica más intensa?**
-* **¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo?**
-* **¿Cual es la relación entre las variables de un sismo?**
-
-
 ******
 # Integración y selección
 ******
@@ -57,7 +56,8 @@ Primero, importaremos el dataset.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Importamos el data set
-data_terremotos<-read.csv("../data/terremotos_centro_sur_america.csv",header=T,sep=",")
+data_terremotos<-read.csv("../data/terremotos_centro_sur_america.csv", encoding="UTF-8", header=T,sep=",")
+paises_de_america<-read.csv("../data/Paises.csv", encoding="ANSI", header=T,sep=",")
 head(data_terremotos)
 # Cantidad de registros
 dim(data_terremotos)[1]
@@ -104,7 +104,176 @@ data_terremotos$Profundidad <- gsub('.{1}$', '', data_terremotos$Profundidad)
 data_terremotos$Profundidad <- as.numeric(data_terremotos$Profundidad)
 ```
 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(stringr)
 
+
+word <- function(string, start = 1L, end = start, sep = fixed(" ")) {
+  args <- vctrs::vec_recycle_common(string = string, start = start, end = end)
+  string <- args$string
+  start <- args$start
+  end <- args$end
+
+  breaks <- str_locate_all(string, sep)
+  words <- lapply(breaks, invert_match)
+
+  # Convert negative values into actual positions
+  len <- vapply(words, nrow, integer(1))
+
+  neg_start <- !is.na(start) & start < 0L
+  start[neg_start] <- start[neg_start] + len[neg_start] + 1L
+
+  neg_end <- !is.na(end) & end < 0L
+  end[neg_end] <- end[neg_end] + len[neg_end] + 1L
+
+  # Replace indexes past end with NA
+  start[start > len] <- NA
+  end[end > len] <- NA
+
+  # To return all words when trying to extract more words than available
+  start[start < 1L] <- 1
+
+  # Extract locations
+  starts <- mapply(function(word, loc) word[loc, "start"], words, start)
+  ends <-   mapply(function(word, loc) word[loc, "end"], words, end)
+
+  str_sub(string, starts, ends)
+}
+
+
+# Calcular punto cardinal para usar en futuro cálculo de coordenada de ubicación de sismo.
+
+#data_terremotos$puntoCardinal <- word(word(data_terremotos$Ubicacion, start = 2, sep = fixed('km al ')), 1)
+
+# Función para punto cardinal
+
+ existe_punto_cardinal <- function(x) {
+  library(dplyr)
+  case_when(
+    tolower(word(word(x, start = 2, sep = fixed("km al ")), 1)) == "norte" ~ "norte",
+    tolower(word(word(x, start = 2, sep = fixed("km al ")), 1)) == "noreste" ~  "noreste",
+    tolower(word(word(x, start = 2, sep = fixed("km al ")), 1)) == "este" ~  "este",
+    tolower(word(word(x, start = 2, sep = fixed("km al ")), 1)) == "sureste" ~  "sureste",
+    tolower(word(word(x, start = 2, sep = fixed("km al ")), 1)) == "sur" ~  "sur",
+    tolower(word(word(x, start = 2, sep = fixed("km al ")), 1)) == "suroeste" ~  "suroeste",
+    tolower(word(word(x, start = 2, sep = fixed("km al ")), 1)) == "oeste" ~  "oeste",
+    tolower(word(word(x, start = 2, sep = fixed("km al ")), 1)) == "noroeste" ~  "noroeste",
+#    TRUE ~ x
+    TRUE ~ data_terremotos$Ubicacion
+  )
+ }
+ 
+ zona_de_sismo <- function(x) {
+  case_when(
+    x == "norte" ~ word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))),
+    x == "noreste" ~ word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))),
+    x == "este" ~  word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))),
+    x == "sureste" ~  word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))),
+    x == "sur" ~  word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))),
+    x == "suroeste" ~  word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))),
+    x == "oeste" ~  word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))),
+    x == "noroeste" ~  word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))),
+    TRUE ~ data_terremotos$Ubicacion
+  )
+ }
+ 
+ zona_de_sismo2 <- function(x) {
+  y <- word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))) 
+  case_when(
+    x == "norte" ~ y,
+    x == "noreste" ~ y,
+    x == "este" ~  y,
+    x == "sureste" ~  y,
+    x == "sur" ~  y,
+    x == "suroeste" ~  y,
+    x == "oeste" ~  y,
+    x == "noroeste" ~  y,
+    TRUE ~ data_terremotos$Ubicacion
+  )
+ }
+
+  zona_de_sismo3 <- function(x) {
+  y <- word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep=""))) 
+  case_when(
+    x == "norte" ~ y,
+    x == "noreste" ~ y,
+    x == "este" ~  y,
+    x == "sureste" ~  y,
+    x == "sur" ~  y,
+    x == "suroeste" ~  y,
+    x == "oeste" ~  y,
+    x == "noroeste" ~  y,
+    TRUE ~ data_terremotos$Ubicacion
+  )
+  return(y)
+ }
+ 
+data_terremotos$puntoCardinal <- str_trim(existe_punto_cardinal(data_terremotos$Ubicacion))
+
+validar_pais2 <- function(z) {
+  r <- data.frame(z)
+  s <- data.frame(paises_de_america)
+  h <- ""
+  delimitador <- ".*"
+  
+  for (a in 1:nrow(z)) {
+    for (g in 1:nrow(s)) {
+      if (grepl(paises_de_america$Paises[g], z$Paises[a])) {
+        r$Paises[a] <-
+          paste((gsub(
+            pattern = (paste((
+              str_trim(s$Paises[g])
+            ), delimitador, sep = "")), "", x = z$Paises[a]
+          )), (str_trim(s$Paises[g])), sep = "")
+        break
+      } else {
+        r$Paises[a] <- z$Paises[a]
+      }
+    }
+  }
+  return(r)
+}
+
+validar_pais3 <- function(z) {
+  r <- data.frame(z)
+  s <- data.frame(paises_de_america)
+  h <- ""
+  delimitador <- ".*"
+  
+  for (a in 1:nrow(z)) {
+    for (g in 1:nrow(s)) {
+      if (grepl(paises_de_america$Paises[g], z$Zona.de.referencia[a])) {
+        r$Zona.de.referencia[a] <- str_trim(
+          paste((gsub(
+            pattern = (paste((
+              str_trim(s$Paises[g])
+            ), delimitador, sep = "")), "", x = z$Zona.de.referencia[a]
+          )), (str_trim(s$Paises[g])), sep = ""))
+        break
+      } else {
+        r$Zona.de.referencia[a] <- str_trim(z$Zona.de.referencia[a])
+      }
+    }
+  }
+  return(r)
+}
+
+data_terremotos$Zona.de.referencia <- zona_de_sismo2(data_terremotos$puntoCardinal)
+#data_terremotos$Zona.de.referencia2 <- validar_pais2(data_terremotos$Zona.de.referencia)
+variable_final <- validar_pais3(data_terremotos)
+
+#data_terremotos$Zona.de.referencia3 <- nrow(data_terremotos$Zona.de.referencia)
+# Calcular zona de referencia.
+
+# data_terremotos$Zona.de.referencia <- word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(data_terremotos$puntoCardinal,' de ',sep="")))
+# 
+print(data_terremotos$puntoCardinal)
+print(data_terremotos$Zona.de.referencia)
+print(variable_final$Zona.de.referencia)
+print(variable_final$Latitud)
+print(variable_final$Longitud)
+
+```
 
 ******
 # Limpieza
@@ -200,114 +369,12 @@ Al ser datos reales de sismos, no haremos ningún tratamiento adicional a estos 
 # Analisis de datos
 ******
 
+
 ##  Planificación
 
-Con el objetivo de responder las 3 preguntas especificas planteadas en el *apartado 1. Descripción*, se realizarán tres analisis estadisticos:
-
-* **Contraste de hipotesis**, para determinar qué paises se dan los sismos de mayor intensidad/profundidad y con qué significancia.
-* Un modelo de **regresion logísica**, donde se modelará la probabilidad de que ocurra un sismo de acuerdo a las varibles del dataset. Nos ayudará a determinar que variables son significativas para la ocurrencia de un sismo.
-* Analisis de **correlacion**, para determinar si existe una correlación entre: 1) la intensidad y la profundidad y 2) la longitud/latitud y la intensidad y 3) la longitud/latitud y la profundidad.
-
-Por lo tanto, para el contraste de hipotesis los grupos a comparar serán los paises. Y para la regresión y la correlación el analisis se realizará al conjunto de datos en su totalidad.
-
-
-##  Normalidad y Homocedasticidad
-
-Antes de realizar las pruebas estadisticas, vamos a comprobar la Normalidad y Homocedasticidad de los datos.
-
-Primero, comprobaremos la ***normalidad*** de los datos. Para ello utilizaremos el test de  **Kolmogorov-Smirnov** para las variables **Magnitud y Profunidad.** No optamos usar el test Shapiro-wilk porque el tamaño de los registros superan los 5000.
-
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-# Test Kolmogorov-Smirnov aplicado a la Magnitud
-ks.test(data_terremotos$Magnitud, pnorm, mean(data_terremotos$Magnitud), sd(data_terremotos$Magnitud))
-```
-
-El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que la Magnitud no sigue una distribución Normal.
-
-
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-# Test Kolmogorov-Smirnov aplicado a la Profundidad
-ks.test(data_terremotos$Profundidad, pnorm, mean(data_terremotos$Profundidad), sd(data_terremotos$Profundidad))
-```
-
-El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que la Profundidad no sigue una distribución Normal.
-
-Por lo tanto, concluimos que ***la Intensidad y la Profundidad no siguen una distribución normal.***
-
-
-Ahora, comprobaremos la ***homocedasticidad*** (homogeneidad de la varianza). Para ello utilizaremos el test Fligner-Killeen, utilizado para datos que no cumplen con la condición de normalidad, para las variables **Magnitud y Profunidad** según los grupos de **Paises.**
-
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-# Test Fligner-Killeen aplicado a la Intensidad para los grupos de paises.
-fligner.test(Magnitud ~ Pais, data = data_terremotos)
-```
-
-El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que **la Magnitud presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.**
-
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-# Test Fligner-Killeen aplicado a la Profundidad para los grupos de paises.
-fligner.test(Profundidad ~ Pais, data = data_terremotos)
-```
-
-El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que **la Profundidad presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.**
-
-Por lo tanto, concluimos que ***la Intensidad y la Profundidad presentan varianzas diferentes para los Paises.***
-
+##  Normalidad y Homogeneidad
 
 ##  Pruebas estadísticas
-
-En este apartado realizaremos los 3 análisis descritos en la sección *4.1 Planificación.*
-
-### Contraste de Hipotesis
-
-Realizaremos una analisis de contraste de hipotesis para saber qué pais tiene una magnitud y profundidad estadisticamente mayor a los demás.
-
-Mostramos las medias de Magnitud y Profundidad de los paises:
-
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-library(plyr)
-# Contruimos una tabla con la media y varianza de la Magnitud de los Paises
-# Calculamos la media
-t_mean <- aggregate(data_terremotos$Magnitud, list(data_terremotos$Pais) , mean)
-colnames(t_mean) <- c("Pais","Media")
-# Calculamos la varianza
-t_var <- aggregate(data_terremotos$Magnitud, list(data_terremotos$Pais) , var)
-colnames(t_var) <- c("Pais","Varianza")
-# Calculamos la cantidad de sismos
-t_count <- count(data_terremotos,"Pais")
-colnames(t_count) <- c("Pais","Cantidad")
-# Contruimos la tabla y la ordenamos
-table_pais <- merge(t_mean,t_var, by = "Pais")
-table_pais <- merge(table_pais,t_count, by = "Pais")
-table_pais[order(table_pais$Media,decreasing = TRUE),]
-```
-
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-# Contruimos una tabla con la media y varianza de la Profundidad de los Paises
-# Calculamos la media
-t_mean <- aggregate(data_terremotos$Profundidad, list(data_terremotos$Pais) , mean)
-colnames(t_mean) <- c("Pais","Media")
-# Calculamos la varianza
-t_var <- aggregate(data_terremotos$Profundidad, list(data_terremotos$Pais) , var)
-colnames(t_var) <- c("Pais","Varianza")
-# Calculamos la cantidad de sismos
-t_count <- count(data_terremotos,"Pais")
-colnames(t_count) <- c("Pais","Cantidad")
-# Contruimos la tabla y la ordenamos
-table_pais <- merge(t_mean,t_var, by = "Pais")
-table_pais <- merge(table_pais,t_count, by = "Pais")
-table_pais[order(table_pais$Media,decreasing = TRUE),]
-```
-
-En el caso de Paraguay, decidimos no considerarla por la baja cantidad de sismos (30) y alta varianza.
-Podemos observar que los 3 paises con mayor magnitud son: Brazil, Chile y Mexico. Pero todos los paises tienen valores aparentemente parecidos.
-También, observamos que los 3 paises con mayor profundidad de sismo son: Argentina, Bolivia y Brazil.
-
-Analizaremos la Magnitud, 
-
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-
-```
 
 
 ******
@@ -329,7 +396,3 @@ Analizaremos la Magnitud,
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
 ```
-
-
-Posibles puntos a adicionar:
-Utilizar los años para prueba de hipotesis.
