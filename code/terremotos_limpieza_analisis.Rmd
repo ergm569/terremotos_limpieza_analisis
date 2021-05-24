@@ -232,10 +232,10 @@ ks.test(data_terremotos$Profundidad, pnorm, mean(data_terremotos$Profundidad), s
 
 El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que la Profundidad no sigue una distribución Normal.
 
-Por lo tanto, concluimos que ***la Intensidad y la Profundidad no siguen una distribución normal.***
+Por lo tanto, concluimos que ***la Magnitud y la Profundidad no siguen una distribución normal.***
 
 
-Ahora, comprobaremos la ***homocedasticidad*** (homogeneidad de la varianza). Para ello utilizaremos el test Fligner-Killeen, utilizado para datos que no cumplen con la condición de normalidad, para las variables **Magnitud y Profunidad** según los grupos de **Paises.**
+Ahora, comprobaremos la ***homocedasticidad*** (homogeneidad de la varianza). Para ello utilizaremos el test **Fligner-Killeen,** utilizado para datos que no cumplen con la condición de normalidad, para las variables **Magnitud y Profunidad** según los grupos de **Paises.**
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Test Fligner-Killeen aplicado a la Intensidad para los grupos de paises.
@@ -251,7 +251,7 @@ fligner.test(Profundidad ~ Pais, data = data_terremotos)
 
 El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que **la Profundidad presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.**
 
-Por lo tanto, concluimos que ***la Intensidad y la Profundidad presentan varianzas diferentes para los Paises.***
+Por lo tanto, concluimos que ***la Magnitud y la Profundidad presentan varianzas diferentes para los Paises.***
 
 
 ##  Pruebas estadísticas
@@ -303,12 +303,85 @@ En el caso de Paraguay, decidimos no considerarla por la baja cantidad de sismos
 Podemos observar que los 3 paises con mayor magnitud son: Brazil, Chile y Mexico. Pero todos los paises tienen valores aparentemente parecidos.
 También, observamos que los 3 paises con mayor profundidad de sismo son: Argentina, Bolivia y Brazil.
 
-Analizaremos la Magnitud, 
+A continuación, realizaremos el test Kruskal-Wallis (test no paramétrico) para comprobar que las medias de la Magnitud y la Profundidad sean iguales en todos los paises. Comenzaremos con la Magnitud:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-
+# Test Kruskal para la Magnitud según los Paises. Sin considerar a Paraguay
+kruskal.test(Magnitud ~ Pais, data = data_terremotos[data_terremotos$Pais!='paraguay',])
 ```
 
+Dado que el p-value es menor a la 0.05 por lo que rechazamos la hipotesis nula y aceptamos la hipotesis alternativa, que es que la Magnitud muestra diferencias significativas para los diferentes paises.
+Ahora realizaremos el test a la Profundidad: 
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Test Kruskal para la Progundidad los Paises. Sin considerar a Paraguay
+kruskal.test(Profundidad ~ Pais, data = data_terremotos[data_terremotos$Pais!='paraguay',])
+```
+
+Dado que el p-value es menor a la 0.05 por lo que rechazamos la hipotesis nula y aceptamos la hipotesis alternativa, que es que la Profundida muestra diferencias significativas para los diferentes paises.
+
+Por lo tanto, concluimos que **los paises no tienen la misma Magnitud y la Profundida estadisticamente.** Una vez comprobada las diferencias de las medidas, comprobaremos si los paises en los primeros lugares son estadisticamente superiores a los demás.
+
+***Primero, analizaremos la Magnitud.*** Estamos frente a un constraste de dos muestras independientes con varianzas desconocidas diferentes; además por el teorema de límite central (muestras mayores a 30) se puede asumir normalidad. Por lo tanto podemos utilizar el t-test para realizar este contraste de hipotesis.
+
+Validaremos si la Magnitud de Brazil (1°) es superior a Chile (2°). Las hipotesis son:
+H0: La Magnitud media de Brazil y Chile son iguales.
+H1: La Magnitud media de Brazil es mayor a la de Chile.
+
+Aplicando el t-test:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+t.test(data_terremotos$Magnitud[data_terremotos$Pais=='brazil'],data_terremotos$Magnitud[data_terremotos$Pais=='chile'],alternative="greater", var.equal=FALSE)
+```
+
+El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipotesis nula y se acepta la alternativa. Es decir aceptamos que Brazil tiene una Magnitud media mayor que Chile, con un nivel de confianza de 99%.
+
+Validaremos si la Magnitud de Brazil (1°) es superior a México (3°). Las hipotesis son:
+H0: La Magnitud media de Brazil y México son iguales.
+H1: La Magnitud media de Brazil es mayor a la de México
+
+Aplicando el t-test:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+t.test(data_terremotos$Magnitud[data_terremotos$Pais=='brazil'],data_terremotos$Magnitud[data_terremotos$Pais=='mexico'],alternative="greater", var.equal=FALSE)
+```
+
+El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipotesis nula y se acepta la alternativa. Es decir aceptamos que Brazil tiene una Magnitud media mayor que México, con un nivel de confianza de 99%.
+
+**Con esto validamos que Brazil es el pais con mayor magnitud sismica de latino america**
+
+
+***Segundo, analizaremos la Profundidad*** Estamos frente a un constraste de dos muestras independientes con varianzas desconocidas diferentes; además por el teorema de límite central (muestras mayores a 30) se puede asumir normalidad. Por lo tanto podemos utilizar el t-test para realizar este contraste de hipotesis.
+
+Validaremos si la Profundidad de Argentina (1°) es superior a Bolivia (2°). Las hipotesis son:
+H0: La Profundidad media de Argentina y Bolivia son iguales.
+H1: La Profundidad media de Argentina es mayor a la de Bolivia
+
+Aplicando el t-test:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+t.test(data_terremotos$Profundidad[data_terremotos$Pais=='argentina'],data_terremotos$Profundidad[data_terremotos$Pais=='bolivia'],alternative="greater", var.equal=FALSE)
+```
+
+El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipotesis nula y se acepta la alternativa. Es decir aceptamos que Argentina tiene una Profundidad media mayor que Bolivia, con un nivel de confianza de 99%.
+
+Validaremos si la Profundidad de Argentina (1°) es superior a Brazil (3°). Las hipotesis son:
+H0: La Magnitud media de Argentina y Brazil son iguales.
+H1: La Magnitud media de Argentina es mayor a la de Brazil
+
+Aplicando el t-test:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+t.test(data_terremotos$Profundidad[data_terremotos$Pais=='argentina'],data_terremotos$Profundidad[data_terremotos$Pais=='brazil'],alternative="greater", var.equal=FALSE)
+```
+
+El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipotesis nula y se acepta la alternativa. Es decir aceptamos que Argentina tiene una Profundidad media mayor que Brazil, con un nivel de confianza de 99%.
+
+**Con esto validamos que Argentina es el pais con mayor profundidad sismica de latino america**
+
+### Regresión Logística
+
+### Correlación
 
 ******
 # Gráficos y tablas de resultados
@@ -333,3 +406,6 @@ Analizaremos la Magnitud,
 
 Posibles puntos a adicionar:
 Utilizar los años para prueba de hipotesis.
+Analisis de extremos para las coordenadas.
+Revisar normalidad y homocedasticidad para coordenas.
+
