@@ -70,6 +70,7 @@ Primero, importaremos el dataset.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Importamos el data set
 data_terremotos<-read.csv("../data/terremotos_centro_sur_america.csv", encoding="UTF-8", header=T,sep=",")
+paises_de_america<-read.csv("../data/Paises.csv", encoding="ANSI", header=T,sep=",")
 head(data_terremotos)
 # Cantidad de registros
 dim(data_terremotos)[1]
@@ -535,4 +536,3 @@ Posibles puntos a adicionar:
 Utilizar los años para prueba de hipotesis.
 Analisis de extremos para las coordenadas.
 Revisar normalidad y homocedasticidad para coordenas.
-
