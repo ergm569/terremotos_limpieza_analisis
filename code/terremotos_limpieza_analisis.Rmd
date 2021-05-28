@@ -1,7 +1,7 @@
 ---
 title: 'Tipología y ciclo de vida de los datos: PRA2'
 author: "Autorse: Erick Franz García Miranda y Rafael Eduardo Garcia Agramonte"
-date: "Abril 2021"
+date: "Mayo 2021"
 output:
   html_document:
     highlight: default
@@ -23,22 +23,11 @@ knitr::opts_chunk$set(eval=T, echo=T)
 
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-# Instala paquetes que faltan por instalarse
-
-list.of.packages <- c("lubridate", "stringr", "tidygeocoder", "dplyr")
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages, repos='https://cran.rediris.es/')
-```
-
-
-
-
 ******
 # Descripción del dataset
 ******
 
-El dataset corresponde al generado en la PRA1 utilizando tecnicas de webscraping con Python al sitio web: https://www.volcanodiscovery.com/es/earthquakes/ que muestra información de eventos sismicos al rededor del mundo.
+El dataset corresponde al generado en la PRA1 utilizando tecnicas de webscraping con Python al sitio web: https://www.volcanodiscovery.com/es/earthquakes/ que muestra información de eventos sismicos al rededor del mundo. Se realizó una extensión del código de webscraping, donde se agregaron 2 columnas: "Latitud" y "Longitud" del sismo.
 
 El dataset contiene información de terremotos de 15 paises de centro y sur america como son: Argentina, Bolivia, Brasil, Chile, Colombia, Costa Rica, Ecuador, Guatemala, México, Panamá, Paraguay, Perú, Puerto Rico, República Dominicana, Venezuela); en el perido de 01 de enero del 2010 hasta el 05 de abril del 2021. El dataset tiene formato .csv y tiene **12507 registros.**
 
@@ -50,6 +39,8 @@ Cada registro representa un evento sismico y contiene los siguientes campos:
 * **Ubicación:** Lugar en donde se produjo el sismo.
 * **Año:** Año en que ocurrió el sismo.
 * **País:** Nombre de la nación afectada por el sismo.
+* **Latitud:** Coordenada Y de la ubicación del sismo.
+* **Longitud:** Coordenada X de la ubicación del sismo.
 
 La importancia del dataset se encuentra en lo impredecible y potencialmente debastador que es un evento sismico. Un registro completo de estos eventos hace que el potencial de analisis del dataset sea elevado.
 
@@ -64,6 +55,15 @@ Este pregunta la podemos dividir en 3 preguntas especificas:
 ******
 # Integración y selección
 ******
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Instala paquetes que faltan por instalarse
+
+list.of.packages <- c("lubridate", "stringr", "dplyr","plyr","ggplot2")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, repos='https://cran.rediris.es/')
+```
+
 
 Primero, importaremos el dataset.
 
@@ -116,6 +116,11 @@ data_terremotos$Profundidad <- gsub('km', '', data_terremotos$Profundidad)
 data_terremotos$Profundidad <- gsub('.{1}$', '', data_terremotos$Profundidad)
 data_terremotos$Profundidad <- as.numeric(data_terremotos$Profundidad)
 ```
+
+
+***Zona de referencia***
+
+Vamos a crear un campo llamado "Zona de referencia" que contenga la ubicación resumida del sismo, a partir del campo 'Ubicacion' que tiene una descripción más larga.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 library(stringr)
@@ -283,9 +288,6 @@ Observamos que o existen outliers de la variable Magnitud.
 También, analizaremos las variables Profundidad y Magnitud utilizando la **distancia de Mahalanobis** para encontrar 100 outliers.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-#ap <- data.frame(Altura.cm=c(164, 167, 168, 169, 169, 170, 170, 170, 171,172, 172, 173, 173, 175, 176, 178), Peso.kg=c( 54, 57, 58, 60, 61, 60,61, 62, 62, 64, 62, 62, 64, 56, 66, 70))
-
-
 #Criterio +/-2SD
 ap <- data_terremotos[,c("Profundidad","Magnitud")]
 Profundidad.outlier <- abs(scale(data_terremotos$Profundidad)) > 2
@@ -332,9 +334,9 @@ Al ser datos reales de sismos, no haremos ningún tratamiento adicional a estos 
 
 Con el objetivo de responder las 3 preguntas especificas planteadas en el *apartado 1. Descripción*, se realizarán tres analisis estadisticos:
 
-* **Contraste de hipotesis**, para determinar qué paises se dan los sismos de mayor intensidad/profundidad y con qué significancia.
+* **Contraste de hipotesis**, para determinar qué paises se dan los sismos de mayor Magnitud/Profundidad y con qué significancia.
 * Un modelo de **regresion logísica**, donde se modelará la probabilidad de que ocurra un sismo de acuerdo a las varibles del dataset. Nos ayudará a determinar que variables son significativas para la ocurrencia de un sismo.
-* Analisis de **correlacion**, para determinar si existe una correlación entre: 1) la intensidad y la profundidad y 2) la longitud/latitud y la intensidad y 3) la longitud/latitud y la profundidad.
+* Analisis de **correlacion**, para determinar si existe una correlación entre: 1) magnitud y profundidad, 2) longitud y magnitud, 3) latitud y magnitud, 4) longitud y profundidad y 5) latitud y profundidad.
 
 Por lo tanto, para el contraste de hipotesis los grupos a comparar serán los paises. Y para la regresión y la correlación el analisis se realizará al conjunto de datos en su totalidad.
 
@@ -366,7 +368,7 @@ Por lo tanto, concluimos que ***la Magnitud y la Profundidad no siguen una distr
 Ahora, comprobaremos la ***homocedasticidad*** (homogeneidad de la varianza). Para ello utilizaremos el test **Fligner-Killeen,** utilizado para datos que no cumplen con la condición de normalidad, para las variables **Magnitud y Profunidad** según los grupos de **Paises.**
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-# Test Fligner-Killeen aplicado a la Intensidad para los grupos de paises.
+# Test Fligner-Killeen aplicado a la Magnitud para los grupos de paises.
 fligner.test(Magnitud ~ Pais, data = data_terremotos)
 ```
 
@@ -405,9 +407,10 @@ colnames(t_var) <- c("Pais","Varianza")
 t_count <- count(data_terremotos,"Pais")
 colnames(t_count) <- c("Pais","Cantidad")
 # Contruimos la tabla y la ordenamos
-table_pais <- merge(t_mean,t_var, by = "Pais")
-table_pais <- merge(table_pais,t_count, by = "Pais")
-table_pais[order(table_pais$Media,decreasing = TRUE),]
+table_pais_mag <- merge(t_mean,t_var, by = "Pais")
+table_pais_mag <- merge(table_pais_mag,t_count, by = "Pais")
+table_pais_mag<- table_pais_mag[order(table_pais_mag$Media,decreasing = TRUE),]
+table_pais_mag
 ```
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -422,9 +425,10 @@ colnames(t_var) <- c("Pais","Varianza")
 t_count <- count(data_terremotos,"Pais")
 colnames(t_count) <- c("Pais","Cantidad")
 # Contruimos la tabla y la ordenamos
-table_pais <- merge(t_mean,t_var, by = "Pais")
-table_pais <- merge(table_pais,t_count, by = "Pais")
-table_pais[order(table_pais$Media,decreasing = TRUE),]
+table_pais_pro <- merge(t_mean,t_var, by = "Pais")
+table_pais_pro <- merge(table_pais_pro,t_count, by = "Pais")
+table_pais_pro <- table_pais_pro[order(table_pais_pro$Media,decreasing = TRUE),]
+table_pais_pro
 ```
 
 En el caso de Paraguay, decidimos no considerarla por la baja cantidad de sismos (30) y alta varianza.
@@ -512,18 +516,61 @@ El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipot
 ### Correlación
 
 ******
-# Gráficos y tablas de resultados
+# Resultados
 ******
+
+## Contraste de Hipotesis
+
+Del analisis del contraste de hipotesis pudimos validar el los paises con mayor Magnitud y Profundidad. En el caso de la Magnitud, **Brazil** es el pais con mayor Magnitud medida (4.75) en los últimos 11 años.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Cargamos ggplot2
+library(ggplot2)
+
+# Graficamos las Magnitudes medias de los paises
+# Calculamos el top 5 de paises
+table_pais_mag.top <- head(table_pais_mag[table_pais_mag$Pais!='paraguay',])
+# Graficamos el barplot
+barplot(height = table_pais_mag.top$Media, names.arg = table_pais_mag.top$Pais,  main = "Magnitud promedio por paises", col = rainbow(5), ylim=c(3.5,5))
+```
+
+En el caso de la Profundidad, **Argentina** es el pais con mayor Profundidad medida (159.1 km) en los últimos 11 años.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Graficamos las Progundidades medias de los paises
+# Calculamos el top 5 de paises
+table_pais_pro.top <- head(table_pais_pro[table_pais_pro$Pais!='paraguay',])
+# Graficamos el barplot
+barplot(height = table_pais_pro.top$Media, names.arg = table_pais_pro.top$Pais,  main = "Profundidad promedio por paises", col = rainbow(5))
+```
+
+## Regresión Logística
+
+## Correlación
+
 
 
 ******
 # Resolución del problema
 ******
+Respondiendo a la pregunta general:
+
+**"¿Existe algún patrón o patrones en la actividad sismica de america latina (centro america y sur america)?"**  
+
+Si existen patrones de la actividad sismica de america latina que nos permitió sacar algunas conclusiones. Y respondiendo a las 3 preguntas especificas, tenemos:
+
+* **¿Cuál es el país con actividad sismica más intensa?** 
+
+Los paises con actividades sismicas más intensas son Brazil y Argentina.
+
+Brazil con una Magnitud media de 4.75, mayor a los demás paises con un nivel de confianza de 99%.
+Y Argentina con una Profundidad media 159.1 km, mayor a los demás paises con un nivel de confianza de 99%.
+
+* **¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo?**
+* **¿Cual es la relación entre las variables de un sismo?**
 
 
-******
-# Código
-******
+
 
 
 

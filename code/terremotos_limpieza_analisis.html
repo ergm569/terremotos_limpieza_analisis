@@ -368,7 +368,7 @@ pre code {
 
 <h1 class="title toc-ignore">Tipología y ciclo de vida de los datos: PRA2</h1>
 <h4 class="author">Autorse: Erick Franz García Miranda y Rafael Eduardo Garcia Agramonte</h4>
-<h4 class="date">Abril 2021</h4>
+<h4 class="date">Mayo 2021</h4>
 
 </div>
 
@@ -382,12 +382,15 @@ pre code {
 </ul></li>
 <li><a href="#analisis-de-datos"><span class="toc-section-number">4</span> Analisis de datos</a><ul>
 <li><a href="#planificación"><span class="toc-section-number">4.1</span> Planificación</a></li>
-<li><a href="#normalidad-y-homogeneidad"><span class="toc-section-number">4.2</span> Normalidad y Homogeneidad</a></li>
+<li><a href="#normalidad-y-homocedasticidad"><span class="toc-section-number">4.2</span> Normalidad y Homocedasticidad</a></li>
 <li><a href="#pruebas-estadísticas"><span class="toc-section-number">4.3</span> Pruebas estadísticas</a></li>
 </ul></li>
-<li><a href="#gráficos-y-tablas-de-resultados"><span class="toc-section-number">5</span> Gráficos y tablas de resultados</a></li>
+<li><a href="#resultados"><span class="toc-section-number">5</span> Resultados</a><ul>
+<li><a href="#contraste-de-hipotesis-1"><span class="toc-section-number">5.1</span> Contraste de Hipotesis</a></li>
+<li><a href="#regresión-logística-1"><span class="toc-section-number">5.2</span> Regresión Logística</a></li>
+<li><a href="#correlación-1"><span class="toc-section-number">5.3</span> Correlación</a></li>
+</ul></li>
 <li><a href="#resolución-del-problema"><span class="toc-section-number">6</span> Resolución del problema</a></li>
-<li><a href="#código"><span class="toc-section-number">7</span> Código</a></li>
 </ul>
 </div>
 
@@ -395,7 +398,7 @@ pre code {
 <div id="descripción-del-dataset" class="section level1">
 <h1><span class="header-section-number">1</span> Descripción del dataset</h1>
 <hr />
-<p>El dataset corresponde al generado en la PRA1 utilizando tecnicas de webscraping con Python al sitio web: <a href="https://www.volcanodiscovery.com/es/earthquakes/" class="uri">https://www.volcanodiscovery.com/es/earthquakes/</a> que muestra información de eventos sismicos al rededor del mundo.</p>
+<p>El dataset corresponde al generado en la PRA1 utilizando tecnicas de webscraping con Python al sitio web: <a href="https://www.volcanodiscovery.com/es/earthquakes/" class="uri">https://www.volcanodiscovery.com/es/earthquakes/</a> que muestra información de eventos sismicos al rededor del mundo. Se realizó una extensión del código de webscraping, donde se agregaron 2 columnas: “Latitud” y “Longitud” del sismo.</p>
 <p>El dataset contiene información de terremotos de 15 paises de centro y sur america como son: Argentina, Bolivia, Brasil, Chile, Colombia, Costa Rica, Ecuador, Guatemala, México, Panamá, Paraguay, Perú, Puerto Rico, República Dominicana, Venezuela); en el perido de 01 de enero del 2010 hasta el 05 de abril del 2021. El dataset tiene formato .csv y tiene <strong>12507 registros.</strong></p>
 <p>Cada registro representa un evento sismico y contiene los siguientes campos:</p>
 <ul>
@@ -405,6 +408,16 @@ pre code {
 <li><strong>Ubicación:</strong> Lugar en donde se produjo el sismo.</li>
 <li><strong>Año:</strong> Año en que ocurrió el sismo.</li>
 <li><strong>País:</strong> Nombre de la nación afectada por el sismo.</li>
+<li><strong>Latitud:</strong> Coordenada Y de la ubicación del sismo.</li>
+<li><strong>Longitud:</strong> Coordenada X de la ubicación del sismo.</li>
+</ul>
+<p>La importancia del dataset se encuentra en lo impredecible y potencialmente debastador que es un evento sismico. Un registro completo de estos eventos hace que el potencial de analisis del dataset sea elevado.</p>
+<p>En este proyecto se utilizará el dataset para responder la pregunta general de <strong>“¿Existe algún patrón o patrones en la actividad sismica de america latina (centro america y sur america)?”</strong><br />
+Este pregunta la podemos dividir en 3 preguntas especificas:</p>
+<ul>
+<li><strong>¿Cuál es el país con actividad sismica más intensa?</strong></li>
+<li><strong>¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo?</strong></li>
+<li><strong>¿Cual es la relación entre las variables de un sismo?</strong></li>
 </ul>
 <hr />
 </div>
@@ -413,22 +426,23 @@ pre code {
 <hr />
 <p>Primero, importaremos el dataset.</p>
 <pre class="r"><code># Importamos el data set
-data_terremotos&lt;-read.csv(&quot;../data/terremotos_centro_sur_america.csv&quot;,header=T,sep=&quot;,&quot;)
+data_terremotos&lt;-read.csv(&quot;../data/terremotos_centro_sur_america.csv&quot;, encoding=&quot;UTF-8&quot;, header=T,sep=&quot;,&quot;)
+paises_de_america&lt;-read.csv(&quot;../data/Paises.csv&quot;, encoding=&quot;ANSI&quot;, header=T,sep=&quot;,&quot;)
 head(data_terremotos)</code></pre>
 <pre><code>##               Fecha.y.Hora Magnitud Profundidad
-## 1 30 Dec 2010 16:35:33 GMT      4.1     109Â km
-## 2 21 Dec 2010 20:04:47 GMT      4.7     187Â km
-## 3 19 Dec 2010 07:43:52 GMT      4.5     108Â km
-## 4 18 Dec 2010 13:07:52 GMT      4.3     124Â km
-## 5 17 Dec 2010 22:14:26 GMT      4.8     568Â km
-## 6 17 Dec 2010 20:34:24 GMT      4.8      72Â km
-##                                                                 Ubicacion AÃ.o
-## 1                       24 km al norte de Provincia de Nazca, Ica, PerÃº  2010
-## 2          16 km al sureste de Vilavila, Provincia de Lampa, Puno, PerÃº  2010
-## 3         46 km al suroeste de Yauri, Provincia de Espinar, Cusco, PerÃº  2010
-## 4 7.6 km al noroeste de ChuÃ±une, Provincia de Caylloma, Arequipa, PerÃº  2010
-## 5                  85 km al suroeste de Tarauaca, Estado de Acre, Brasil  2010
-## 6               30 km al noreste de Ilo, Departamento de Moquegua, PerÃº  2010
+## 1 30 Dec 2010 16:35:33 GMT      4.1      109 km
+## 2 21 Dec 2010 20:04:47 GMT      4.7      187 km
+## 3 19 Dec 2010 07:43:52 GMT      4.5      108 km
+## 4 18 Dec 2010 13:07:52 GMT      4.3      124 km
+## 5 17 Dec 2010 22:14:26 GMT      4.8      568 km
+## 6 17 Dec 2010 20:34:24 GMT      4.8       72 km
+##                                                               Ubicacion  Año
+## 1                      24 km al norte de Provincia de Nazca, Ica, Perú  2010
+## 2         16 km al sureste de Vilavila, Provincia de Lampa, Puno, Perú  2010
+## 3        46 km al suroeste de Yauri, Provincia de Espinar, Cusco, Perú  2010
+## 4 7.6 km al noroeste de Chuñune, Provincia de Caylloma, Arequipa, Perú  2010
+## 5                85 km al suroeste de Tarauaca, Estado de Acre, Brasil  2010
+## 6              30 km al noreste de Ilo, Departamento de Moquegua, Perú  2010
 ##   Pais
 ## 1 peru
 ## 2 peru
@@ -467,6 +481,142 @@ data_terremotos$Profundidad &lt;- gsub(&#39;Â&#39;, &#39;&#39;, data_terremotos
 data_terremotos$Profundidad &lt;- gsub(&#39;km&#39;, &#39;&#39;, data_terremotos$Profundidad)
 data_terremotos$Profundidad &lt;- gsub(&#39;.{1}$&#39;, &#39;&#39;, data_terremotos$Profundidad)
 data_terremotos$Profundidad &lt;- as.numeric(data_terremotos$Profundidad)</code></pre>
+<p><strong><em>Zona de referencia</em></strong></p>
+<p>Vamos a crear un campo llamado “Zona de referencia” que contenga la ubicación resumida del sismo, a partir del campo ‘Ubicacion’ que tiene una descripción más larga.</p>
+<pre class="r"><code>library(stringr)
+
+# Funcion que busca una palabra a partir de cierta posicion en R.
+# Autor: Hadley Wickham
+# Fuente: https://github.com/tidyverse/stringr/blob/master/R/word.r
+
+word &lt;- function(string, start = 1L, end = start, sep = fixed(&quot; &quot;)) {
+  args &lt;- vctrs::vec_recycle_common(string = string, start = start, end = end)
+  string &lt;- args$string
+  start &lt;- args$start
+  end &lt;- args$end
+
+  breaks &lt;- str_locate_all(string, sep)
+  words &lt;- lapply(breaks, invert_match)
+
+  # Convert negative values into actual positions
+  len &lt;- vapply(words, nrow, integer(1))
+
+  neg_start &lt;- !is.na(start) &amp; start &lt; 0L
+  start[neg_start] &lt;- start[neg_start] + len[neg_start] + 1L
+
+  neg_end &lt;- !is.na(end) &amp; end &lt; 0L
+  end[neg_end] &lt;- end[neg_end] + len[neg_end] + 1L
+
+  # Replace indexes past end with NA
+  start[start &gt; len] &lt;- NA
+  end[end &gt; len] &lt;- NA
+
+  # To return all words when trying to extract more words than available
+  start[start &lt; 1L] &lt;- 1
+
+  # Extract locations
+  starts &lt;- mapply(function(word, loc) word[loc, &quot;start&quot;], words, start)
+  ends &lt;-   mapply(function(word, loc) word[loc, &quot;end&quot;], words, end)
+
+  str_sub(string, starts, ends)
+}
+
+
+# Verifica si el texto contiene alguno de los puntos cardinales.
+
+# Función para punto cardinal
+
+ existe_punto_cardinal &lt;- function(x) {
+  library(dplyr)
+  case_when(
+    tolower(word(word(x, start = 2, sep = fixed(&quot;km al &quot;)), 1)) == &quot;norte&quot; ~ &quot;norte&quot;,
+    tolower(word(word(x, start = 2, sep = fixed(&quot;km al &quot;)), 1)) == &quot;noreste&quot; ~  &quot;noreste&quot;,
+    tolower(word(word(x, start = 2, sep = fixed(&quot;km al &quot;)), 1)) == &quot;este&quot; ~  &quot;este&quot;,
+    tolower(word(word(x, start = 2, sep = fixed(&quot;km al &quot;)), 1)) == &quot;sureste&quot; ~  &quot;sureste&quot;,
+    tolower(word(word(x, start = 2, sep = fixed(&quot;km al &quot;)), 1)) == &quot;sur&quot; ~  &quot;sur&quot;,
+    tolower(word(word(x, start = 2, sep = fixed(&quot;km al &quot;)), 1)) == &quot;suroeste&quot; ~  &quot;suroeste&quot;,
+    tolower(word(word(x, start = 2, sep = fixed(&quot;km al &quot;)), 1)) == &quot;oeste&quot; ~  &quot;oeste&quot;,
+    tolower(word(word(x, start = 2, sep = fixed(&quot;km al &quot;)), 1)) == &quot;noroeste&quot; ~  &quot;noroeste&quot;,
+#    TRUE ~ x
+    TRUE ~ data_terremotos$Ubicacion
+  )
+ }
+ 
+ # Devuelve contenido de la Ubicacion del sismo  sin el texto que antecede a los puntos cardinales. Sino, retornara la misma columna.
+ 
+ zona_de_sismo2 &lt;- function(x) {
+  y &lt;- word(data_terremotos$Ubicacion, start = 2, sep = fixed(paste(x,&#39; de &#39;,sep=&quot;&quot;))) 
+  case_when(
+    x == &quot;norte&quot; ~ y,
+    x == &quot;noreste&quot; ~ y,
+    x == &quot;este&quot; ~  y,
+    x == &quot;sureste&quot; ~  y,
+    x == &quot;sur&quot; ~  y,
+    x == &quot;suroeste&quot; ~  y,
+    x == &quot;oeste&quot; ~  y,
+    x == &quot;noroeste&quot; ~  y,
+    TRUE ~ data_terremotos$Ubicacion
+  )
+ }
+ 
+# Variable que combina las dos funciones anteriores para limpiar la columna Ubicacion. 
+ 
+data_terremotos_puntoCardinal &lt;- str_trim(existe_punto_cardinal(data_terremotos$Ubicacion))
+
+# Analiza si la columna Ubicacion contiene alguno de los paises de America (variable declara al inicio de este fichero). Retorna la limpieza final de esta columna en una nueva columna que se agrega al dataframe en cuestion.
+
+validar_pais3 &lt;- function(z) {
+  r &lt;- data.frame(z)
+  s &lt;- data.frame(paises_de_america)
+  h &lt;- &quot;&quot;
+  delimitador &lt;- &quot;.*&quot;
+  
+  for (a in 1:nrow(z)) {
+    for (g in 1:nrow(s)) {
+      if (grepl(paises_de_america$Paises[g], z$Zona.de.referencia[a])) {
+        r$Zona.de.referencia[a] &lt;- str_trim(
+          paste((gsub(
+            pattern = (paste((
+              str_trim(s$Paises[g])
+            ), delimitador, sep = &quot;&quot;)), &quot;&quot;, x = z$Zona.de.referencia[a]
+          )), (str_trim(s$Paises[g])), sep = &quot;&quot;))
+        break
+      } else {
+        r$Zona.de.referencia[a] &lt;- str_trim(z$Zona.de.referencia[a])
+      }
+    }
+  }
+  return(r)
+}
+
+# Agrega la columna Zona de referencia con ayuda de la funcion zona de sismo2.
+
+data_terremotos$Zona.de.referencia &lt;- zona_de_sismo2(data_terremotos_puntoCardinal)
+
+data_terremotos &lt;- validar_pais3(data_terremotos)
+
+head(data_terremotos)</code></pre>
+<pre><code>##          Fecha.y.Hora Magnitud Profundidad
+## 1 2010-12-30 16:35:33      4.1         109
+## 2 2010-12-21 20:04:47      4.7         187
+## 3 2010-12-19 07:43:52      4.5         108
+## 4 2010-12-18 13:07:52      4.3         124
+## 5 2010-12-17 22:14:26      4.8         568
+## 6 2010-12-17 20:34:24      4.8          72
+##                                                               Ubicacion  Año
+## 1                      24 km al norte de Provincia de Nazca, Ica, Perú  2010
+## 2         16 km al sureste de Vilavila, Provincia de Lampa, Puno, Perú  2010
+## 3        46 km al suroeste de Yauri, Provincia de Espinar, Cusco, Perú  2010
+## 4 7.6 km al noroeste de Chuñune, Provincia de Caylloma, Arequipa, Perú  2010
+## 5                85 km al suroeste de Tarauaca, Estado de Acre, Brasil  2010
+## 6              30 km al noreste de Ilo, Departamento de Moquegua, Perú  2010
+##   Pais Mes Hora Dia.Semana                             Zona.de.referencia
+## 1 peru  12   16     jueves                  Provincia de Nazca, Ica, Perú
+## 2 peru  12   20     martes       Vilavila, Provincia de Lampa, Puno, Perú
+## 3 peru  12    7    domingo       Yauri, Provincia de Espinar, Cusco, Perú
+## 4 peru  12   13     sábado Chuñune, Provincia de Caylloma, Arequipa, Perú
+## 5 peru  12   22    viernes               Tarauaca, Estado de Acre, Brasil
+## 6 peru  12   20    viernes            Ilo, Departamento de Moquegua, Perú</code></pre>
 <hr />
 </div>
 <div id="limpieza" class="section level1">
@@ -477,10 +627,12 @@ data_terremotos$Profundidad &lt;- as.numeric(data_terremotos$Profundidad)</code>
 <p>Vamos a revisar los valores vacios del dataset:</p>
 <pre class="r"><code># Estadísticas de valores vacíos
 colSums(is.na(data_terremotos))</code></pre>
-<pre><code>## Fecha.y.Hora     Magnitud  Profundidad    Ubicacion         AÃ.o         Pais 
-##            0            0            0            0            0            0 
-##          Mes         Hora   Dia.Semana 
-##            0            0            0</code></pre>
+<pre><code>##       Fecha.y.Hora           Magnitud        Profundidad          Ubicacion 
+##                  0                  0                  0                  0 
+##                Año               Pais                Mes               Hora 
+##                  0                  0                  0                  0 
+##         Dia.Semana Zona.de.referencia 
+##                  0                 23</code></pre>
 <pre class="r"><code>colSums(data_terremotos[c(&quot;Magnitud&quot;,&quot;Profundidad&quot;,&quot;Ubicacion&quot;)]==&quot;&quot;)</code></pre>
 <pre><code>##    Magnitud Profundidad   Ubicacion 
 ##           0           0           0</code></pre>
@@ -512,10 +664,7 @@ length(Magnitud.bp$out)</code></pre>
 <pre><code>## [1] 0</code></pre>
 <p>Observamos que o existen outliers de la variable Magnitud.</p>
 <p>También, analizaremos las variables Profundidad y Magnitud utilizando la <strong>distancia de Mahalanobis</strong> para encontrar 100 outliers.</p>
-<pre class="r"><code>#ap &lt;- data.frame(Altura.cm=c(164, 167, 168, 169, 169, 170, 170, 170, 171,172, 172, 173, 173, 175, 176, 178), Peso.kg=c( 54, 57, 58, 60, 61, 60,61, 62, 62, 64, 62, 62, 64, 56, 66, 70))
-
-
-#Criterio +/-2SD
+<pre class="r"><code>#Criterio +/-2SD
 ap &lt;- data_terremotos[,c(&quot;Profundidad&quot;,&quot;Magnitud&quot;)]
 Profundidad.outlier &lt;- abs(scale(data_terremotos$Profundidad)) &gt; 2
 Magnitud.outlier &lt;- abs(scale(data_terremotos$Magnitud)) &gt; 2
@@ -553,28 +702,266 @@ range(ap[is.outlier,]$Profundidad)</code></pre>
 <hr />
 <div id="planificación" class="section level2">
 <h2><span class="header-section-number">4.1</span> Planificación</h2>
+<p>Con el objetivo de responder las 3 preguntas especificas planteadas en el <em>apartado 1. Descripción</em>, se realizarán tres analisis estadisticos:</p>
+<ul>
+<li><strong>Contraste de hipotesis</strong>, para determinar qué paises se dan los sismos de mayor Magnitud/Profundidad y con qué significancia.</li>
+<li>Un modelo de <strong>regresion logísica</strong>, donde se modelará la probabilidad de que ocurra un sismo de acuerdo a las varibles del dataset. Nos ayudará a determinar que variables son significativas para la ocurrencia de un sismo.</li>
+<li>Analisis de <strong>correlacion</strong>, para determinar si existe una correlación entre: 1) magnitud y profundidad, 2) longitud y magnitud, 3) latitud y magnitud, 4) longitud y profundidad y 5) latitud y profundidad.</li>
+</ul>
+<p>Por lo tanto, para el contraste de hipotesis los grupos a comparar serán los paises. Y para la regresión y la correlación el analisis se realizará al conjunto de datos en su totalidad.</p>
 </div>
-<div id="normalidad-y-homogeneidad" class="section level2">
-<h2><span class="header-section-number">4.2</span> Normalidad y Homogeneidad</h2>
+<div id="normalidad-y-homocedasticidad" class="section level2">
+<h2><span class="header-section-number">4.2</span> Normalidad y Homocedasticidad</h2>
+<p>Antes de realizar las pruebas estadisticas, vamos a comprobar la Normalidad y Homocedasticidad de los datos.</p>
+<p>Primero, comprobaremos la <strong><em>normalidad</em></strong> de los datos. Para ello utilizaremos el test de <strong>Kolmogorov-Smirnov</strong> para las variables <strong>Magnitud y Profunidad.</strong> No optamos usar el test Shapiro-wilk porque el tamaño de los registros superan los 5000.</p>
+<pre class="r"><code># Test Kolmogorov-Smirnov aplicado a la Magnitud
+ks.test(data_terremotos$Magnitud, pnorm, mean(data_terremotos$Magnitud), sd(data_terremotos$Magnitud))</code></pre>
+<pre><code>## 
+##  One-sample Kolmogorov-Smirnov test
+## 
+## data:  data_terremotos$Magnitud
+## D = 0.11388, p-value &lt; 2.2e-16
+## alternative hypothesis: two-sided</code></pre>
+<p>El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que la Magnitud no sigue una distribución Normal.</p>
+<pre class="r"><code># Test Kolmogorov-Smirnov aplicado a la Profundidad
+ks.test(data_terremotos$Profundidad, pnorm, mean(data_terremotos$Profundidad), sd(data_terremotos$Profundidad))</code></pre>
+<pre><code>## 
+##  One-sample Kolmogorov-Smirnov test
+## 
+## data:  data_terremotos$Profundidad
+## D = 0.17461, p-value &lt; 2.2e-16
+## alternative hypothesis: two-sided</code></pre>
+<p>El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que la Profundidad no sigue una distribución Normal.</p>
+<p>Por lo tanto, concluimos que <strong><em>la Magnitud y la Profundidad no siguen una distribución normal.</em></strong></p>
+<p>Ahora, comprobaremos la <strong><em>homocedasticidad</em></strong> (homogeneidad de la varianza). Para ello utilizaremos el test <strong>Fligner-Killeen,</strong> utilizado para datos que no cumplen con la condición de normalidad, para las variables <strong>Magnitud y Profunidad</strong> según los grupos de <strong>Paises.</strong></p>
+<pre class="r"><code># Test Fligner-Killeen aplicado a la Magnitud para los grupos de paises.
+fligner.test(Magnitud ~ Pais, data = data_terremotos)</code></pre>
+<pre><code>## 
+##  Fligner-Killeen test of homogeneity of variances
+## 
+## data:  Magnitud by Pais
+## Fligner-Killeen:med chi-squared = 1232.2, df = 14, p-value &lt; 2.2e-16</code></pre>
+<p>El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que <strong>la Magnitud presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.</strong></p>
+<pre class="r"><code># Test Fligner-Killeen aplicado a la Profundidad para los grupos de paises.
+fligner.test(Profundidad ~ Pais, data = data_terremotos)</code></pre>
+<pre><code>## 
+##  Fligner-Killeen test of homogeneity of variances
+## 
+## data:  Profundidad by Pais
+## Fligner-Killeen:med chi-squared = 1533.6, df = 14, p-value &lt; 2.2e-16</code></pre>
+<p>El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que <strong>la Profundidad presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.</strong></p>
+<p>Por lo tanto, concluimos que <strong><em>la Magnitud y la Profundidad presentan varianzas diferentes para los Paises.</em></strong></p>
 </div>
 <div id="pruebas-estadísticas" class="section level2">
 <h2><span class="header-section-number">4.3</span> Pruebas estadísticas</h2>
+<p>En este apartado realizaremos los 3 análisis descritos en la sección <em>4.1 Planificación.</em></p>
+<div id="contraste-de-hipotesis" class="section level3">
+<h3><span class="header-section-number">4.3.1</span> Contraste de Hipotesis</h3>
+<p>Realizaremos una analisis de contraste de hipotesis para saber qué pais tiene una magnitud y profundidad estadisticamente mayor a los demás.</p>
+<p>Mostramos las medias de Magnitud y Profundidad de los paises:</p>
+<pre class="r"><code>library(plyr)
+# Contruimos una tabla con la media y varianza de la Magnitud de los Paises
+# Calculamos la media
+t_mean &lt;- aggregate(data_terremotos$Magnitud, list(data_terremotos$Pais) , mean)
+colnames(t_mean) &lt;- c(&quot;Pais&quot;,&quot;Media&quot;)
+# Calculamos la varianza
+t_var &lt;- aggregate(data_terremotos$Magnitud, list(data_terremotos$Pais) , var)
+colnames(t_var) &lt;- c(&quot;Pais&quot;,&quot;Varianza&quot;)
+# Calculamos la cantidad de sismos
+t_count &lt;- count(data_terremotos,&quot;Pais&quot;)
+colnames(t_count) &lt;- c(&quot;Pais&quot;,&quot;Cantidad&quot;)
+# Contruimos la tabla y la ordenamos
+table_pais_mag &lt;- merge(t_mean,t_var, by = &quot;Pais&quot;)
+table_pais_mag &lt;- merge(table_pais_mag,t_count, by = &quot;Pais&quot;)
+table_pais_mag&lt;- table_pais_mag[order(table_pais_mag$Media,decreasing = TRUE),]
+table_pais_mag</code></pre>
+<pre><code>##                  Pais    Media   Varianza Cantidad
+## 3              brazil 4.754051 0.01989887      975
+## 4               chile 4.737109 0.01533709     1024
+## 12           paraguay 4.526667 0.04685057       30
+## 10             mexico 4.525535 0.03499263     1590
+## 13               peru 4.509695 0.05510155     1279
+## 11             panama 4.428444 0.07615159      225
+## 5            colombia 4.414626 0.07211395     1135
+## 8             ecuador 4.405009 0.07525169      579
+## 6           costarica 4.399796 0.06761220      491
+## 1           argentina 4.390386 0.07119347     1113
+## 15          venezuela 4.371647 0.07237500      589
+## 2             bolivia 4.368100 0.06841540     1837
+## 7  dominican-republic 4.342077 0.06860446      183
+## 14         puertorico 4.315929 0.07099399      113
+## 9           guatemala 4.302827 0.05960481     1344</code></pre>
+<pre class="r"><code># Contruimos una tabla con la media y varianza de la Profundidad de los Paises
+# Calculamos la media
+t_mean &lt;- aggregate(data_terremotos$Profundidad, list(data_terremotos$Pais) , mean)
+colnames(t_mean) &lt;- c(&quot;Pais&quot;,&quot;Media&quot;)
+# Calculamos la varianza
+t_var &lt;- aggregate(data_terremotos$Profundidad, list(data_terremotos$Pais) , var)
+colnames(t_var) &lt;- c(&quot;Pais&quot;,&quot;Varianza&quot;)
+# Calculamos la cantidad de sismos
+t_count &lt;- count(data_terremotos,&quot;Pais&quot;)
+colnames(t_count) &lt;- c(&quot;Pais&quot;,&quot;Cantidad&quot;)
+# Contruimos la tabla y la ordenamos
+table_pais_pro &lt;- merge(t_mean,t_var, by = &quot;Pais&quot;)
+table_pais_pro &lt;- merge(table_pais_pro,t_count, by = &quot;Pais&quot;)
+table_pais_pro &lt;- table_pais_pro[order(table_pais_pro$Media,decreasing = TRUE),]
+table_pais_pro</code></pre>
+<pre><code>##                  Pais     Media   Varianza Cantidad
+## 12           paraguay 481.73333 47586.5471       30
+## 1           argentina 159.14043 12411.2051     1113
+## 2             bolivia 132.60806  7275.7574     1837
+## 3              brazil  90.22882  7656.6530      975
+## 15          venezuela  82.59440  4831.1656      589
+## 13               peru  76.60102  6946.5626     1279
+## 4               chile  73.89238  4481.9011     1024
+## 9           guatemala  56.56652  2528.4718     1344
+## 5            colombia  54.02670  3624.8708     1135
+## 10             mexico  43.02585  2397.5896     1590
+## 8             ecuador  40.40225  2110.9041      579
+## 14         puertorico  37.30973  1417.8404      113
+## 7  dominican-republic  32.39563  1747.3546      183
+## 6           costarica  30.14542  1184.0289      491
+## 11             panama  20.90000   212.9273      225</code></pre>
+<p>En el caso de Paraguay, decidimos no considerarla por la baja cantidad de sismos (30) y alta varianza. Podemos observar que los 3 paises con mayor magnitud son: Brazil, Chile y Mexico. Pero todos los paises tienen valores aparentemente parecidos. También, observamos que los 3 paises con mayor profundidad de sismo son: Argentina, Bolivia y Brazil.</p>
+<p>A continuación, realizaremos el test Kruskal-Wallis (test no paramétrico) para comprobar que las medias de la Magnitud y la Profundidad sean iguales en todos los paises. Comenzaremos con la Magnitud:</p>
+<pre class="r"><code># Test Kruskal para la Magnitud según los Paises. Sin considerar a Paraguay
+kruskal.test(Magnitud ~ Pais, data = data_terremotos[data_terremotos$Pais!=&#39;paraguay&#39;,])</code></pre>
+<pre><code>## 
+##  Kruskal-Wallis rank sum test
+## 
+## data:  Magnitud by Pais
+## Kruskal-Wallis chi-squared = 3352.8, df = 13, p-value &lt; 2.2e-16</code></pre>
+<p>Dado que el p-value es menor a la 0.05 por lo que rechazamos la hipotesis nula y aceptamos la hipotesis alternativa, que es que la Magnitud muestra diferencias significativas para los diferentes paises. Ahora realizaremos el test a la Profundidad:</p>
+<pre class="r"><code># Test Kruskal para la Progundidad los Paises. Sin considerar a Paraguay
+kruskal.test(Profundidad ~ Pais, data = data_terremotos[data_terremotos$Pais!=&#39;paraguay&#39;,])</code></pre>
+<pre><code>## 
+##  Kruskal-Wallis rank sum test
+## 
+## data:  Profundidad by Pais
+## Kruskal-Wallis chi-squared = 2926, df = 13, p-value &lt; 2.2e-16</code></pre>
+<p>Dado que el p-value es menor a la 0.05 por lo que rechazamos la hipotesis nula y aceptamos la hipotesis alternativa, que es que la Profundida muestra diferencias significativas para los diferentes paises.</p>
+<p>Por lo tanto, concluimos que <strong>los paises no tienen la misma Magnitud y la Profundida estadisticamente.</strong> Una vez comprobada las diferencias de las medidas, comprobaremos si los paises en los primeros lugares son estadisticamente superiores a los demás.</p>
+<p><strong><em>Primero, analizaremos la Magnitud.</em></strong> Estamos frente a un constraste de dos muestras independientes con varianzas desconocidas diferentes; además por el teorema de límite central (muestras mayores a 30) se puede asumir normalidad. Por lo tanto podemos utilizar el t-test para realizar este contraste de hipotesis.</p>
+<p>Validaremos si la Magnitud de Brazil (1°) es superior a Chile (2°). Las hipotesis son: H0: La Magnitud media de Brazil y Chile son iguales. H1: La Magnitud media de Brazil es mayor a la de Chile.</p>
+<p>Aplicando el t-test:</p>
+<pre class="r"><code>t.test(data_terremotos$Magnitud[data_terremotos$Pais==&#39;brazil&#39;],data_terremotos$Magnitud[data_terremotos$Pais==&#39;chile&#39;],alternative=&quot;greater&quot;, var.equal=FALSE)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  data_terremotos$Magnitud[data_terremotos$Pais == &quot;brazil&quot;] and data_terremotos$Magnitud[data_terremotos$Pais == &quot;chile&quot;]
+## t = 2.848, df = 1935.6, p-value = 0.002223
+## alternative hypothesis: true difference in means is greater than 0
+## 95 percent confidence interval:
+##  0.007152524         Inf
+## sample estimates:
+## mean of x mean of y 
+##  4.754051  4.737109</code></pre>
+<p>El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipotesis nula y se acepta la alternativa. Es decir aceptamos que Brazil tiene una Magnitud media mayor que Chile, con un nivel de confianza de 99%.</p>
+<p>Validaremos si la Magnitud de Brazil (1°) es superior a México (3°). Las hipotesis son: H0: La Magnitud media de Brazil y México son iguales. H1: La Magnitud media de Brazil es mayor a la de México</p>
+<p>Aplicando el t-test:</p>
+<pre class="r"><code>t.test(data_terremotos$Magnitud[data_terremotos$Pais==&#39;brazil&#39;],data_terremotos$Magnitud[data_terremotos$Pais==&#39;mexico&#39;],alternative=&quot;greater&quot;, var.equal=FALSE)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  data_terremotos$Magnitud[data_terremotos$Pais == &quot;brazil&quot;] and data_terremotos$Magnitud[data_terremotos$Pais == &quot;mexico&quot;]
+## t = 35.087, df = 2456.4, p-value &lt; 2.2e-16
+## alternative hypothesis: true difference in means is greater than 0
+## 95 percent confidence interval:
+##  0.2178    Inf
+## sample estimates:
+## mean of x mean of y 
+##  4.754051  4.525535</code></pre>
+<p>El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipotesis nula y se acepta la alternativa. Es decir aceptamos que Brazil tiene una Magnitud media mayor que México, con un nivel de confianza de 99%.</p>
+<p><strong>Con esto validamos que Brazil es el pais con mayor magnitud sismica de latino america</strong></p>
+<p><strong><em>Segundo, analizaremos la Profundidad</em></strong> Estamos frente a un constraste de dos muestras independientes con varianzas desconocidas diferentes; además por el teorema de límite central (muestras mayores a 30) se puede asumir normalidad. Por lo tanto podemos utilizar el t-test para realizar este contraste de hipotesis.</p>
+<p>Validaremos si la Profundidad de Argentina (1°) es superior a Bolivia (2°). Las hipotesis son: H0: La Profundidad media de Argentina y Bolivia son iguales. H1: La Profundidad media de Argentina es mayor a la de Bolivia</p>
+<p>Aplicando el t-test:</p>
+<pre class="r"><code>t.test(data_terremotos$Profundidad[data_terremotos$Pais==&#39;argentina&#39;],data_terremotos$Profundidad[data_terremotos$Pais==&#39;bolivia&#39;],alternative=&quot;greater&quot;, var.equal=FALSE)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  data_terremotos$Profundidad[data_terremotos$Pais == &quot;argentina&quot;] and data_terremotos$Profundidad[data_terremotos$Pais == &quot;bolivia&quot;]
+## t = 6.8252, df = 1897.2, p-value = 5.885e-12
+## alternative hypothesis: true difference in means is greater than 0
+## 95 percent confidence interval:
+##  20.13506      Inf
+## sample estimates:
+## mean of x mean of y 
+##  159.1404  132.6081</code></pre>
+<p>El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipotesis nula y se acepta la alternativa. Es decir aceptamos que Argentina tiene una Profundidad media mayor que Bolivia, con un nivel de confianza de 99%.</p>
+<p>Validaremos si la Profundidad de Argentina (1°) es superior a Brazil (3°). Las hipotesis son: H0: La Magnitud media de Argentina y Brazil son iguales. H1: La Magnitud media de Argentina es mayor a la de Brazil</p>
+<p>Aplicando el t-test:</p>
+<pre class="r"><code>t.test(data_terremotos$Profundidad[data_terremotos$Pais==&#39;argentina&#39;],data_terremotos$Profundidad[data_terremotos$Pais==&#39;brazil&#39;],alternative=&quot;greater&quot;, var.equal=FALSE)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  data_terremotos$Profundidad[data_terremotos$Pais == &quot;argentina&quot;] and data_terremotos$Profundidad[data_terremotos$Pais == &quot;brazil&quot;]
+## t = 15.808, df = 2062.1, p-value &lt; 2.2e-16
+## alternative hypothesis: true difference in means is greater than 0
+## 95 percent confidence interval:
+##  61.73786      Inf
+## sample estimates:
+## mean of x mean of y 
+## 159.14043  90.22882</code></pre>
+<p>El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipotesis nula y se acepta la alternativa. Es decir aceptamos que Argentina tiene una Profundidad media mayor que Brazil, con un nivel de confianza de 99%.</p>
+<p><strong>Con esto validamos que Argentina es el pais con mayor profundidad sismica de latino america</strong></p>
+</div>
+<div id="regresión-logística" class="section level3">
+<h3><span class="header-section-number">4.3.2</span> Regresión Logística</h3>
+</div>
+<div id="correlación" class="section level3">
+<h3><span class="header-section-number">4.3.3</span> Correlación</h3>
 <hr />
 </div>
 </div>
-<div id="gráficos-y-tablas-de-resultados" class="section level1">
-<h1><span class="header-section-number">5</span> Gráficos y tablas de resultados</h1>
+</div>
+<div id="resultados" class="section level1">
+<h1><span class="header-section-number">5</span> Resultados</h1>
 <hr />
+<div id="contraste-de-hipotesis-1" class="section level2">
+<h2><span class="header-section-number">5.1</span> Contraste de Hipotesis</h2>
+<p>Del analisis del contraste de hipotesis pudimos validar el los paises con mayor Magnitud y Profundidad. En el caso de la Magnitud, <strong>Brazil</strong> es el pais con mayor Magnitud medida (4.75) en los últimos 11 años.</p>
+<pre class="r"><code># Cargamos ggplot2
+library(ggplot2)
+
+# Graficamos las Magnitudes medias de los paises
+# Calculamos el top 5 de paises
+table_pais_mag.top &lt;- head(table_pais_mag[table_pais_mag$Pais!=&#39;paraguay&#39;,])
+# Graficamos el barplot
+barplot(height = table_pais_mag.top$Media, names.arg = table_pais_mag.top$Pais,  main = &quot;Magnitud promedio por paises&quot;, col = rainbow(5), ylim=c(3.5,5))</code></pre>
+<p><img src="data:image/png;base64,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" width="672" /></p>
+<p>En el caso de la Profundidad, <strong>Argentina</strong> es el pais con mayor Profundidad medida (159.1 km) en los últimos 11 años.</p>
+<pre class="r"><code># Graficamos las Progundidades medias de los paises
+# Calculamos el top 5 de paises
+table_pais_pro.top &lt;- head(table_pais_pro[table_pais_pro$Pais!=&#39;paraguay&#39;,])
+# Graficamos el barplot
+barplot(height = table_pais_pro.top$Media, names.arg = table_pais_pro.top$Pais,  main = &quot;Profundidad promedio por paises&quot;, col = rainbow(5))</code></pre>
+<p><img src="data:image/png;base64,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mzh7+ucXM39ZfJP+qG8xATQt8t3XH8977/SefR74aADJQj++un7eTejZMx8gAWMS/fn/9csXz58+ffrsxffqCYxM0xdUBmiZgAJUElCASgIKUElAASoJKEAlAQWoJKAAlQQUoJKAAlQSUIBKAgpQSUABKgkoQCUBBagkoACVBBSgkoACVBJQgEoCClBJQAEqCShAJQEFqCSgAJUEFKCSgAJUElCASgIKUElAASoJKEAlAQWoJKAAlQQUoJKAAlQSUIBKAgpQSUABKgkoQCUBBagkoACVBBSgkoACVBJQgEoCClBJQAEqCeg+b76e/e/1l5O3/pr1kK/PJ+/dvsRyOOVRpY51Y/+od7t1ex6Ohz7+aNP9c/ZN/5aHfeAF9HbX304+nv+/gO4joA9+/NEE9NG5mgjogQT0wY8/moA+OquApjo4oE25S0CXWtysYzz08UcbBnTzFw90xwno7QT0YAL64McfTUAfHQE9mIA++PFHE9AH4LfnTyaTydkHXy/+eDF599VP708mH/ww/cObzyaz//r9k+mN87+9/nG28AdfL/80O4zXz6dLn304W3yWz7kvtt6r6S5ReMS7m6doNta3n71a3Xb902f9ka7+73I2wPU93321ORvvfWTHjXpr32+NZTrEjemxuPe3wvr75Gbvsb7pL1IY42r2r1ZZXOn8v4L2/Hofn330a3HQ3Z1eHHC26x87u3gxot4t2we+tzXNG11AL7vn/M38fPpx9qfZqbT6u/+8Cuj0vFp4Z344Z4fxf65ums2/YkC3lig84t3NpslyaKsZ8ObTwUjX513nqd9lZ6wRIztu1KV9vxhLeED7+2T/sR4sckhACysN3fOFM6M3hM5ObyGgr5fn7dl8F89G9M8XvVu2Dnx/a5o3toBuztzla++LydvzY/LeJofr83p9tCaLw7c1ZWbnXimg20sUHvHupuP6d59sPcjvn6wfYzXSzXnX+ed7688BIztu1J193xtLeED7+2T/sR4sckBACyuN3fPTB/z3q2EVB93d6Q0EdHPezkcyG9H7u0/kwtY0b2QBnR2w+Yubl58uIzn79+7dH1Z/N/t37cfzxYRY3PD17FXD+XySL6bM2eevZt/+XJ75va8xDZcYPuLdzU+j1VDnT6SmW3E2fWF8/Xwz0s55t369unjetbw1YmRHj7qz74tjuZx0N+Qe3wrr7ZMD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" width="672" /></p>
+</div>
+<div id="regresión-logística-1" class="section level2">
+<h2><span class="header-section-number">5.2</span> Regresión Logística</h2>
+</div>
+<div id="correlación-1" class="section level2">
+<h2><span class="header-section-number">5.3</span> Correlación</h2>
 <hr />
+</div>
 </div>
 <div id="resolución-del-problema" class="section level1">
 <h1><span class="header-section-number">6</span> Resolución del problema</h1>
 <hr />
-<hr />
-</div>
-<div id="código" class="section level1">
-<h1><span class="header-section-number">7</span> Código</h1>
-<hr />
+<p>Respondiendo a la pregunta general:</p>
+<p><strong>“¿Existe algún patrón o patrones en la actividad sismica de america latina (centro america y sur america)?”</strong></p>
+<p>Si existen patrones de la actividad sismica de america latina que nos permitió sacar algunas conclusiones. Y respondiendo a las 3 preguntas especificas, tenemos:</p>
+<ul>
+<li><strong>¿Cuál es el país con actividad sismica más intensa?</strong></li>
+</ul>
+<p>Los paises con actividades sismicas más intensas son Brazil y Argentina.</p>
+<p>Brazil con una Magnitud media de 4.75, mayor a los demás paises con un nivel de confianza de 99%. Y Argentina con una Profundidad media 159.1 km, mayor a los demás paises con un nivel de confianza de 99%.</p>
+<ul>
+<li><strong>¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo?</strong></li>
+<li><strong>¿Cual es la relación entre las variables de un sismo?</strong></li>
+</ul>
+<p>Posibles puntos a adicionar: Utilizar los años para prueba de hipotesis. Analisis de extremos para las coordenadas. Revisar normalidad y homocedasticidad para coordenas.</p>
 </div>
 
 
