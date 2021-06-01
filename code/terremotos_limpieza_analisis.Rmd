@@ -11,10 +11,10 @@ output:
     toc_depth: 2
     includes:
       in_header:
+  word_document: default
   pdf_document:
     highlight: zenburn
     toc: yes
-  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -59,7 +59,7 @@ Este pregunta la podemos dividir en 3 preguntas especificas:
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Instala paquetes que faltan por instalarse
 
-list.of.packages <- c("lubridate", "stringr", "dplyr","plyr","ggplot2")
+list.of.packages <- c("lubridate", "stringr", "dplyr","plyr","ggplot2", "PerformanceAnalytics", "readxl", "GGally", "Hmisc", "corrplot")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages, repos='https://cran.rediris.es/')
 ```
@@ -270,7 +270,7 @@ range(Profundidad.bp$out)
 length(Profundidad.bp$out)
 ```
 
-Podemos observar que existen 159 valores outliers de la variable Profundidad que **tienen valores entre 288 a 750 km.**
+Podemos observar que existen 159 valores outliers de la variable Profundidad que **tienen valores entre 288 a 750 km.**`
 
 Ahora, analizaremos la Magnitud.
 
@@ -515,6 +515,39 @@ El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipot
 
 ### Correlación
 
+A continuación se detallan variables con el método Spearman.
+
+#### Magnitud y profundidad
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+cor.test(data_terremotos$Magnitud, data_terremotos$Profundidad, method="spearman")
+```
+
+#### Magnitud y Longitud
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+cor.test(data_terremotos$Magnitud, data_terremotos$Longitud, method="spearman")
+```
+
+#### Magnitud y Latitud
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+cor.test(data_terremotos$Magnitud, data_terremotos$Latitud, method="spearman")
+```
+
+#### Profundidad y Longitud
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+cor.test(data_terremotos$Profundidad, data_terremotos$Longitud, method="spearman")
+```
+
+#### Profundidad y Latitud
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+cor.test(data_terremotos$Profundidad, data_terremotos$Latitud, method="spearman")
+```
+
+
 ******
 # Resultados
 ******
@@ -548,7 +581,41 @@ barplot(height = table_pais_pro.top$Media, names.arg = table_pais_pro.top$Pais, 
 
 ## Correlación
 
+### Magnitud y profundidad
 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Se cargan las librerías que ayudan a colocar los gráficos.
+library(readxl)
+library(GGally)
+library(Hmisc)
+library(corrplot)
+library(PerformanceAnalytics)
+chart.Correlation(data_terremotos[c("Magnitud", "Profundidad")], method = "spearman", histogram = F, pch = 19)
+```
+
+### Longitud y magnitud
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+chart.Correlation(data_terremotos[c("Longitud", "Magnitud")], method = "spearman", histogram = F, pch = 19)
+```
+
+### Latitud y magnitud
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+chart.Correlation(data_terremotos[c("Latitud", "Magnitud")], method = "spearman", histogram = F, pch = 19)
+```
+
+### Longitud y profundidad
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+chart.Correlation(data_terremotos[c("Longitud", "Profundidad")], method = "spearman", histogram = F, pch = 19)
+```
+
+### Latitud y profundidad
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+chart.Correlation(data_terremotos[c("Latitud", "Profundidad")], method = "spearman", histogram = F, pch = 19)
+```
 
 ******
 # Resolución del problema
@@ -567,19 +634,25 @@ Brazil con una Magnitud media de 4.75, mayor a los demás paises con un nivel de
 Y Argentina con una Profundidad media 159.1 km, mayor a los demás paises con un nivel de confianza de 99%.
 
 * **¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo?**
+
 * **¿Cual es la relación entre las variables de un sismo?**
 
+En base a las pruebas de Correlación entre las variables: Magnitud, profundidad, longitud y latitud podemos llegar a las siguientes conclusiones:
 
+- Los países que se acercaban más a la derecha del meridiano de Greenwich (latitud positiva) considerablemente presentaban una mayor profundidad en el sismo. (Rho: 0.45)
 
+- Mientras más al Sur del Ecuador se encontraban los países donde ocurrían los sismos, tendían moderadamente a tener terremotos de mayor profundidad. (Rho: -0.35)
 
+- Existe muy poca relación entre sismos de zonas geográficas con latitudes más a la izquierda del meridiano de Greenwich (número más negativos) y una alta magnitud del sismo. (Rho: -0.18)
 
+- No hay relación significativa entre magnitud y profundidad de un sismo. (Rho: -0.02)
+
+- No hay relación significativa entre magnitud y longitud de un sismo. (Rho: 0.04)
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-
 ```
-
 
 Posibles puntos a adicionar:
 Utilizar los años para prueba de hipotesis.
 Analisis de extremos para las coordenadas.
-Revisar normalidad y homocedasticidad para coordenas.
+Revisar normalidad y homocedasticidad para coordenadas.
