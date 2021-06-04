@@ -239,6 +239,8 @@ head(data_terremotos)
  
 ```
 
+**Seleccionaremos el dataset completo, ya que nuestro interés es analizar los terremotos de latino america entre los años 2010 hasta 2021 (05 abril). Por lo tanto es necesario considerar todos los regitros.**
+
 ******
 # Limpieza
 ******
@@ -250,10 +252,38 @@ Vamos a revisar los valores vacios del dataset:
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Estadísticas de valores vacíos
 colSums(is.na(data_terremotos))
-colSums(data_terremotos[c("Magnitud","Profundidad","Ubicacion")]=="")
+colSums(data_terremotos[c("Magnitud","Profundidad","Ubicacion","Longitud","Latitud")]=="")
 ```
 
 Podemos observar que no existen valores nulos, por lo que no será necesario realizar un tratamiento.
+
+Luego, validamos que no existan otros valores que puedan hacer la función de vacios para las variables numéricas, como: cero, valores de tipo '9999' y negativos.
+
+***Cero***
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Validamos los valores cero
+colSums(data_terremotos[c("Magnitud","Profundidad","Longitud","Latitud")]==0)
+```
+Observamos que no existen valores iguales a cero.
+
+***Valores negativos y valores de tipo '9999'***
+Para ello calcularemos el rango de cada variable. Si alguna variable tiene estos valores en sus límites inferiores o superiores, analizaremos si son valores que reemplazan al vacio.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Rango de la Magnitud
+range(data_terremotos$Magnitud)
+# Rango de la Profundidad
+range(data_terremotos$Profundidad)
+# Rango de la Longitud
+range(data_terremotos$Longitud)
+# Rango de la Latitud
+range(data_terremotos$Latitud)
+```
+Observamos que no existen valores del tipo '9999'.
+Las variables Longitud y Latitud admiten valores negativos, por lo que no las consideraremos como valores que reemplazan al vacio.
+
+
+**Valores negativos**
 
 ##  Valores extremos
 
@@ -327,6 +357,21 @@ Al ser datos reales de sismos, no haremos ningún tratamiento adicional a estos 
 
 
 ******
+# Datos preprocesados
+******
+
+## Resumen de los datos preprocesados
+
+## Exportación del dataset preprocesado
+
+Una vez que tenemos los datos preprocesados, guardaremos el dataset en un archivo csv para posteriores analisis.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Exportación de los datos limpios en .csv
+write.csv(data_terremotos, "terremotos_centro_sur_america_clean.csv")
+```
+
+******
 # Analisis de datos
 ******
 
@@ -345,28 +390,106 @@ Por lo tanto, para el contraste de hipotesis los grupos a comparar serán los pa
 
 Antes de realizar las pruebas estadisticas, vamos a comprobar la Normalidad y Homocedasticidad de los datos.
 
-Primero, comprobaremos la ***normalidad*** de los datos. Para ello utilizaremos el test de  **Kolmogorov-Smirnov** para las variables **Magnitud y Profunidad.** No optamos usar el test Shapiro-wilk porque el tamaño de los registros superan los 5000.
+### Normalidad 
 
+Primero, comprobaremos la ***normalidad*** de los datos. Para ello graficaremos la distribución, construiremos gráficas **QQplots** y aplicaremos el test de **Kolmogorov-Smirnov** para las variables **Magnitud, Profunidad, Longitud y Latitud.** No optamos usar el test Shapiro-wilk porque el tamaño de los registros superan los 5000.
+
+***Magnitud***
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Importamos la librería ggplot2
+library(ggplot2)
+
+#Distribución de la Magnitud
+ggplot(data = data_terremotos, aes (x=data_terremotos$Magnitud)) +
+geom_histogram() +
+ggtitle("Distribución de Magnitud") +
+xlab("Magnitud") +
+ylab("Cantidad")
+
+#Gráfica QQplots
+qqnorm(data_terremotos$Magnitud, pch = 1, frame = FALSE)
+qqline(data_terremotos$Magnitud, col = "steelblue", lwd = 2)
+
 # Test Kolmogorov-Smirnov aplicado a la Magnitud
 ks.test(data_terremotos$Magnitud, pnorm, mean(data_terremotos$Magnitud), sd(data_terremotos$Magnitud))
 ```
 
-El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que la Magnitud no sigue una distribución Normal.
+De los gráficos podemos observar que la magnitud tiene datos centrales muy cercanos a la distribución normal, sin embargo por sus sus valores extremos la Magnitud no tiene la distribución normal.
 
+Del test observamos que el p-value es menor a 0.05 por lo que se rechaza la hipotesis nula de normalidad. Se acepta la hipotesis alternativa, que la **Magnitud** no sigue una distribución Normal.
 
+***Profundidad***
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Distribución de la Profundidad
+ggplot(data = data_terremotos, aes (x=data_terremotos$Profundidad)) +
+geom_histogram() +
+ggtitle("Distribución de Profundidad") +
+xlab("Profundidad") +
+ylab("Cantidad")
+
+#Gráfica QQplots
+qqnorm(data_terremotos$Profundidad, pch = 1, frame = FALSE)
+qqline(data_terremotos$Profundidad, col = "steelblue", lwd = 2)
+
 # Test Kolmogorov-Smirnov aplicado a la Profundidad
 ks.test(data_terremotos$Profundidad, pnorm, mean(data_terremotos$Profundidad), sd(data_terremotos$Profundidad))
 ```
 
-El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que la Profundidad no sigue una distribución Normal.
+De los gráficos podemos observar que la profundidad es unimodal pero con cola a la derecha. Por lo que visualmente la profundidad no sigue una distribución normal.
 
-Por lo tanto, concluimos que ***la Magnitud y la Profundidad no siguen una distribución normal.***
+Del test observamos que el p-value es menor a 0.05 por lo que se rechaza la hipotesis nula de normalidad. Se acepta la hipotesis alternativa, que la **Profundidad** no sigue una distribución Normal.
 
 
-Ahora, comprobaremos la ***homocedasticidad*** (homogeneidad de la varianza). Para ello utilizaremos el test **Fligner-Killeen,** utilizado para datos que no cumplen con la condición de normalidad, para las variables **Magnitud y Profunidad** según los grupos de **Paises.**
+***Longitud***
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Distribución de la Longitud
+ggplot(data = data_terremotos, aes (x=data_terremotos$Longitud)) +
+geom_histogram() +
+ggtitle("Distribución de Longitud") +
+xlab("Longitud") +
+ylab("Cantidad")
 
+#Gráfica QQplots
+qqnorm(data_terremotos$Longitud, pch = 1, frame = FALSE)
+qqline(data_terremotos$Longitud, col = "steelblue", lwd = 2)
+
+# Test Kolmogorov-Smirnov aplicado a la Longitud
+ks.test(data_terremotos$Longitud, pnorm, mean(data_terremotos$Longitud), sd(data_terremotos$Longitud))
+```
+
+De los gráficos podemos observar que la longitud es bimodal y sus valores más altos hacen que la variable se aleje de la distribución normal.
+
+Del test observamos que el p-value es menor a 0.05 por lo que se rechaza la hipotesis nula de normalidad. Se acepta la hipotesis alternativa, que la **Longitud** no sigue una distribución Normal.
+
+
+***Latitud***
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Distribución de la Latitud
+ggplot(data = data_terremotos, aes (x=data_terremotos$Latitud)) +
+geom_histogram() +
+ggtitle("Distribución de Latitud") +
+xlab("Latitud") +
+ylab("Cantidad")
+
+#Gráfica QQplots
+qqnorm(data_terremotos$Latitud, pch = 1, frame = FALSE)
+qqline(data_terremotos$Latitud, col = "steelblue", lwd = 2)
+
+# Test Kolmogorov-Smirnov aplicado a la Latitud
+ks.test(data_terremotos$Latitud, pnorm, mean(data_terremotos$Latitud), sd(data_terremotos$Latitud))
+```
+
+De los gráficos podemos observar que la latitud es tiene muchos picos y es bastante dispersa, por lo que visualmente podemos ver que no se aproxima a una distribución normal.
+
+Del test observamos que el p-value es menor a 0.05 por lo que se rechaza la hipotesis nula de normalidad. Se acepta la hipotesis alternativa, que la **Latitud** no sigue una distribución Normal.
+
+Por lo tanto, concluimos que ***la Magnitud, la Profundidad, la longitud y la Latitud no siguen una distribución normal.***
+
+### Homocedasticidad 
+
+Ahora, comprobaremos la ***homocedasticidad*** (homogeneidad de la varianza). Para ello utilizaremos el test **Fligner-Killeen,** utilizado para datos que no cumplen con la condición de normalidad, para las variables **Magnitud, Profunidad, Longitud y Latitud** según los grupos de **Paises.**
+
+***Magnitud***
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Test Fligner-Killeen aplicado a la Magnitud para los grupos de paises.
 fligner.test(Magnitud ~ Pais, data = data_terremotos)
@@ -374,6 +497,7 @@ fligner.test(Magnitud ~ Pais, data = data_terremotos)
 
 El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que **la Magnitud presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.**
 
+***Profundidad***
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Test Fligner-Killeen aplicado a la Profundidad para los grupos de paises.
 fligner.test(Profundidad ~ Pais, data = data_terremotos)
@@ -381,7 +505,23 @@ fligner.test(Profundidad ~ Pais, data = data_terremotos)
 
 El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que **la Profundidad presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.**
 
-Por lo tanto, concluimos que ***la Magnitud y la Profundidad presentan varianzas diferentes para los Paises.***
+***Longitud***
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Test Fligner-Killeen aplicado a la Longitud para los grupos de paises.
+fligner.test(Longitud ~ Pais, data = data_terremotos)
+```
+
+El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que **la Longitud presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.**
+
+***Latitud***
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Test Fligner-Killeen aplicado a la Latitud para los grupos de paises.
+fligner.test(Latitud ~ Pais, data = data_terremotos)
+```
+
+El p-value es menor a 0.05, por lo que se rechaza la hipotesis nula. Se acepta la hipotesis alternativa, que **la Latitud presenta varianzas estadisticamente diferentes para los distintos grupos de Paises.**
+
+Por lo tanto, concluimos que ***la Magnitud, la Profundidad, la Longitud y la Latitud presentan varianzas diferentes para los Paises.***
 
 
 ##  Pruebas estadísticas
@@ -527,6 +667,9 @@ cor.test(data_terremotos$Magnitud, data_terremotos$Profundidad, method="spearman
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 cor.test(data_terremotos$Magnitud, data_terremotos$Longitud, method="spearman")
+
+length(data_terremotos$Magnitud) #12507
+length(data_terremotos$Lo) #12507
 ```
 
 #### Magnitud y Latitud
