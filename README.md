@@ -32,4 +32,4 @@ Contiene los siguientes ficheros:
 
 ### Licencia
 
-El contenido de este proyecto esta licencia bajo la [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/), y el código fuente usadao para mostrar este contenido esta licenciado bajo la MIT license. 
+El contenido de este proyecto y el dataset utilizado estan bajo la licencia [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/)
