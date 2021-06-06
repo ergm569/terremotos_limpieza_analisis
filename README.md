@@ -12,7 +12,7 @@ La actividad ha sido realizada por:
 * **Erick Franz García Miranda** 
 * **Rafael Eduardo García Agramonte.**
 
-## Fichero
+## Ficheros
 
 ### code
 
