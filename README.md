@@ -4,7 +4,7 @@
 
 Este trabajo corresponde a la resolución de la práctica N°2 de la asignatura Tipología y ciclo de vida de los datos, perteneciente al Máster en Ciencia de Datos de la Universitat Oberta de Catalunya. Y consiste en realizar la limpieza y el análisis al dataset generado en la práctica N°1 que corresponde al registro de los sismos ocurridos en latino america (centro y sur américa) desde el año 2010 hasta mayo del 2021. 
 
-La resolución de la práctica N° se puede consultar en: https://github.com/ergm569/Terremotos_centro_sur_america/
+La resolución de la práctica N° 1 se puede consultar en: https://github.com/ergm569/Terremotos_centro_sur_america/
 
 ## Miembros del equipo
 
