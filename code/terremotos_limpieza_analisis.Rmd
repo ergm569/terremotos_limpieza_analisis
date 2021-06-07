@@ -1,8 +1,9 @@
 ---
 title: 'Tipología y ciclo de vida de los datos: PRA2'
-author: "Autorse: Erick Franz García Miranda y Rafael Eduardo Garcia Agramonte"
-date: "Mayo 2021"
+author: "Autores: Erick Franz García Miranda y Rafael Eduardo Garcia Agramonte"
+date: "Junio 2021"
 output:
+  word_document: default
   html_document:
     highlight: default
     number_sections: yes
@@ -11,7 +12,6 @@ output:
     toc_depth: 2
     includes:
       in_header:
-  word_document: default
   pdf_document:
     highlight: zenburn
     toc: yes
@@ -48,9 +48,8 @@ En este proyecto se utilizará el dataset para responder la pregunta general de 
 Este pregunta la podemos dividir en 3 preguntas especificas:
 
 * **¿Cuál es el país con actividad sismica más intensa?**
-* **¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo?**
+* **¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo moderado?**
 * **¿Cual es la relación entre las variables de un sismo?**
-
 
 ******
 # Integración y selección
@@ -59,7 +58,7 @@ Este pregunta la podemos dividir en 3 preguntas especificas:
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Instala paquetes que faltan por instalarse
 
-list.of.packages <- c("lubridate", "stringr", "dplyr","plyr","ggplot2", "PerformanceAnalytics", "readxl", "GGally", "Hmisc", "corrplot")
+list.of.packages <- c("lubridate", "stringr", "dplyr","plyr","ggplot2", "PerformanceAnalytics", "readxl", "GGally", "Hmisc", "corrplot", "pROC")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages, repos='https://cran.rediris.es/')
 ```
@@ -721,9 +720,134 @@ El p-value es menor al una significancia de 0.01. Por lo que se rechaza la hipot
 
 ### Regresión Logística
 
+Vamos a utilizar la regresión logística para determinar qué variables son relevantes en la ocurrencia de un sismo moderado.
+
+Se construirá una variable dicotómica para utilizar como variable dependiente. Vamos a utilizar la magnitud y determinar el umbral para la variable dicotómica. Primero, observaremos la distribución de la magnitud.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Diagrama de cajas de Magnitud
+boxplot(data_terremotos$Magnitud, horizontal = TRUE, 
+        col=c("turquoise"),
+        main="Boxplot Magnitud")
+```
+En base a lo observado en el gráfico previo utilizaremos un valor cercano a la mediana como umbral. En este caso utilizaremos 4.5. Si la magnitud del sismo es igual o superior a este valor lo consideraremos Moderado/Fuerte. En caso de ser inferior consideraremos al sismo leve.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+# Se crea la variable dicotómica en base a la Magnitud.
+data_terremotos$Nivel.Sismo <- case_when(data_terremotos$Magnitud >= 4.5 ~ 1,
+                                         data_terremotos$Magnitud < 4.5 ~ 0)
+
+table(data_terremotos$Nivel.Sismo)
+
+attach(data_terremotos)
+
+
+
+```
+
+Ahora, vamos a construir el modelo de regresión logística. Para ello vamos a incluiyendo variable por variable para determinar qué tan significantes para el modelo.
+
+**Paso 1: País.**
+
+Vamos a empezar agregando el país al modelo de regresión logística.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Construimos el modelo logistico
+model.logist1 = glm(formula= Nivel.Sismo ~ Pais,family=binomial(link=logit))
+summary(model.logist1)
+```
+Se observa que la mayoría de los países son significantes para el modelo (p-value < 0.05). Por lo tanto, **la variable país será relevante para el modelo.** El índice AIC es 14670.
+
+
+**Paso 2: Longitud.**
+
+Vamos a agregar la variable longitud al modelo de regresión logística.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Construimos el modelo logistico
+model.logist2 = glm(formula= Nivel.Sismo ~ Pais + Longitud, family=binomial(link=logit))
+summary(model.logist2)
+```
+Se observa que la longitud es significante para el modelo (p-value < 0.05). Por lo tanto, **la variable longitud será relevante para el modelo.** Se observa que la longitud no mejora significativamente el índice AIC. (Se reduce solo a 14663). Para determinar qué variable de estas dos aporta más al modelo se utilizará el test de anova.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Aplicamos el test basado en la devianza
+anova(model.logist2,test="Chisq")
+```
+
+Se observa del Test Anova que el país contribuye más al modelo que la longitud. **Por lo tanto, no vamos a considerar la longitud en nuestro modelo.**
+
+**Paso 3: Latitud.**
+
+Vamos a agregar la variable latitud al modelo de regresión logística.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Construimos el modelo logistico
+model.logist3 = glm(formula= Nivel.Sismo ~ Pais + Latitud, family=binomial(link=logit))
+summary(model.logist3)
+```
+Se observa que la latitud es significante para el modelo (p-value < 0.05). Por lo tanto, **la variable latitud será relevante para el modelo.** Sin embargo, se observa que la latitud no mejora significativamente el índice AIC. (Se reduce solo a 14666). Para determinar qué variable de estas dos aporta más al modelo se utilizará el test de anova.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Aplicamos el test basado en la devianza
+anova(model.logist3,test="Chisq")
+```
+
+Se observa del Test Anova que el país contribuye más al modelo que la latitud. **Por lo tanto, no vamos a considerar la latitud en nuestro modelo.**
+
+**Paso 4: Año.**
+
+Vamos a agregar la variable año al modelo de regresión logística.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Construimos el modelo logistico
+model.logist4 = glm(formula= Nivel.Sismo ~ Pais + Año, family=binomial(link=logit))
+summary(model.logist4)
+```
+Se observa que el año no es significante para el modelo (p-value > 0.05). Por lo tanto, **esta variable no será tomanda en cuenta para el modelo.**
+
+**Paso 5: Mes.**
+
+Vamos a agregar la variable mes como factor (no hay ordinalidad) al modelo de regresión logística.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Construimos el modelo logistico
+model.logist5 = glm(formula= Nivel.Sismo ~ Pais + factor(Mes), family=binomial(link=logit))
+summary(model.logist5)
+```
+Se observa que la mayoría de los factores del mes no son significantes para el modelo (p-value > 0.05). Por lo tanto, **la variable Mes no se tomará en cuenta para el modelo.**
+
+**Paso 6: Día de semana.**
+
+Vamos a agregar la variable Dia.Semana al modelo de regresión logística.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Construimos el modelo logistico
+model.logist6 = glm(formula= Nivel.Sismo ~ Pais + Dia.Semana, family=binomial(link=logit))
+summary(model.logist6)
+```
+Se observa que la mayoría de los factores del día de semana no son significantes para el modelo (p-value > 0.05). Por lo tanto, **la variable Dia.Semana no se tomará en cuenta para el modelo.**
+
+**Paso 7: Hora.**
+
+Vamos a agregar la variable Hora al modelo de regresión logística.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Construimos el modelo logistico
+model.logist7 = glm(formula= Nivel.Sismo ~ Pais + factor(Hora), family=binomial(link=logit))
+summary(model.logist7)
+```
+Se observa que la mayoría de los factores de la hora no son significantes para el modelo (p-value > 0.05). Por lo tanto, **la variable Hora no se tomará en cuenta para el modelo.**
+
+**Se concluye que el país es la única variable relevante para la ocurrencia de un sismo moderado.**
+
+
 ### Correlación
 
-A continuación se detallan variables con el método Spearman.
+Vamos a evaluar la correlación entre las variables numéricas: Magnitud, profundidad, longitud y latitud. No se tomará en cuenta la correlación entre la longitud y latitud que son variables geográficas que se complementan.
+
+A continuación se evalúa las correlaciones entre variables con el método Spearman (no paramétrico por la ausencia de normalidad en las variables).
 
 #### Magnitud y profundidad
 
@@ -790,7 +914,28 @@ barplot(height = table_pais_pro.top$Media, names.arg = table_pais_pro.top$Pais, 
 
 ## Regresión Logística
 
+Vamos a graficar la Curva Roc del mejor modelo de regresión logística (variable independiente: país).
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Cargar librería pROC
+library(pROC)
+
+# Graficamos la curva ROC.
+prob=predict(model.logist1, data_terremotos, type="response")
+r=roc(Nivel.Sismo,prob, data=data_terremotos)
+plot (r,main="Curva ROC de modelo logist1 (Pais)")
+```
+Vamos a calcular el área debajo de la curva.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Area debajo de la curva
+auc(r)
+```
+El área debajo de la curva es 0.72, por lo cual concluimos que el modelo es bueno.
+
 ## Correlación
+
+Vamos a graficar la correlación de las variables utilizando la función "chart.Correlation".
 
 ### Magnitud y profundidad
 
@@ -802,6 +947,7 @@ library(Hmisc)
 library(corrplot)
 library(PerformanceAnalytics)
 chart.Correlation(data_terremotos[c("Magnitud", "Profundidad")], method = "spearman", histogram = F, pch = 19)
+?chart.Correlation
 ```
 
 ### Longitud y magnitud
@@ -844,7 +990,9 @@ Los paises con actividades sismicas más intensas son Brazil y Argentina.
 Brazil con una Magnitud media de 4.75, mayor a los demás paises con un nivel de confianza de 99%.
 Y Argentina con una Profundidad media 159.1 km, mayor a los demás paises con un nivel de confianza de 99%.
 
-* **¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo?**
+* **¿Qué variables son más relevantes o significativas en la ocurrencia de un sismo moderado?**
+
+A llevar a cabo la regresión logística concluimos que el país es la única variable relevante para la ocurrencia de un sismo moderado. Además, el área debajo de la curva ROC de este modelo fue 0.72.
 
 * **¿Cual es la relación entre las variables de un sismo?**
 
