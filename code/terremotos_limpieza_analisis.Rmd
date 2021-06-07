@@ -360,16 +360,84 @@ Al ser datos reales de sismos, no haremos ningún tratamiento adicional a estos 
 # Datos preprocesados
 ******
 
-## Resumen de los datos preprocesados
-
-## Exportación del dataset preprocesado
-
-Una vez que tenemos los datos preprocesados, guardaremos el dataset en un archivo csv para posteriores analisis.
+Presentamos como resumen las distribuciones de las variables discretas y continuas.
+Primero, presentamos las distribuciones de las variables discretas **(Pais, Año, Mes, Hora y Dia.Semana)**  a través de gráficos de barra:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-# Exportación de los datos limpios en .csv
-write.csv(data_terremotos, "terremotos_centro_sur_america_clean.csv")
+# Grafico de barras por pais
+barplot(table(data_terremotos$Pais),
+        legend = FALSE, 
+        col = 2:20,
+        main = "Sismos por Pais",
+        xlab="Pais", 
+        ylab="# Sismos",
+        cex.names=0.45)
+
+# Grafico de barras por Año
+barplot(table(data_terremotos$Año),
+        legend = FALSE, 
+        col = 2:20,
+        main = "Sismos por Año",
+        xlab="Año", 
+        ylab="# Sismos")
+
+# Grafico de barras por Año
+barplot(table(data_terremotos$Año),
+        legend = FALSE, 
+        col = 2:20,
+        main = "Sismos por Año",
+        xlab="Año", 
+        ylab="# Sismos")
+
+# Grafico de barras por Mes
+barplot(table(data_terremotos$Mes),
+        legend = FALSE, 
+        col = 2:20,
+        main = "Sismos por Mes",
+        xlab="Mes", 
+        ylab="# Sismos")
+
+# Grafico de barras por Hora
+barplot(table(data_terremotos$Hora),
+        legend = FALSE, 
+        col = 2:20,
+        main = "Sismos por Hora",
+        xlab="Hora", 
+        ylab="# Sismos")
+
+# Grafico de barras por Dia.Semana
+barplot(table(data_terremotos$Dia.Semana),
+        legend = FALSE, 
+        col = 2:20,
+        main = "Sismos por Dia de la Semana",
+        xlab="Dia de la Semana", 
+        ylab="# Sismos")
+```   
+
+Luego, presentamos las distribuciones de las variables continuas **(Pais, Año, Mes, Hora y Dia.Semana)**  a través de diagramas de cajas:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Diagrama de cajas de Magnitud
+boxplot(data_terremotos$Magnitud, horizontal = TRUE, 
+        col=c("turquoise"),
+        main="Boxplot Magnitud")
+
+# Diagrama de cajas de Profundidad
+boxplot(data_terremotos$Profundidad, horizontal = TRUE, 
+        col=c("turquoise"),
+        main="Boxplot Profundidad")
+
+# Diagrama de cajas de Longitud
+boxplot(data_terremotos$Longitud, horizontal = TRUE, 
+        col=c("tomato"),
+        main="Boxplot Longitud")
+
+# Diagrama de cajas de Latitud
+boxplot(data_terremotos$Latitud, horizontal = TRUE, 
+        col=c("tomato"),
+        main="Boxplot Latitud")
 ```
+
 
 ******
 # Analisis de datos
@@ -792,10 +860,21 @@ En base a las pruebas de Correlación entre las variables: Magnitud, profundidad
 
 - No hay relación significativa entre magnitud y longitud de un sismo. (Rho: 0.04)
 
+******
+# Código y datos preprocesados
+******
+
+El código en formato .rmd se puede descargar en Github desde la siguiente dirección: 
+
+https://github.com/ergm569/terremotos_limpieza_analisis/tree/main/code/terremotos_limpieza_analisis.Rmd
+
+Loos datos preprocesados se exportan mediante el siguiente comando:
+
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Exportación de los datos limpios en .csv
+write.csv(data_terremotos, "terremotos_centro_sur_america_clean.csv")
 ```
 
-Posibles puntos a adicionar:
-Utilizar los años para prueba de hipotesis.
-Analisis de extremos para las coordenadas.
-Revisar normalidad y homocedasticidad para coordenadas.
+Y también pueden ser descargados en Github desde la siguiente dirección: 
+
+https://github.com/ergm569/terremotos_limpieza_analisis/tree/main/data/terremotos_centro_sur_america_clean.csv
